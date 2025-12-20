@@ -1,50 +1,154 @@
-# Welcome to your Expo app 👋
+# ReceiptWise 📄✨
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+A small, privacy-first Expo app for scanning, parsing and analyzing receipts using OCR + optional AI parsing.
 
-## Get started
+This repository contains the mobile/web app (React Native + Expo) and local services for OCR, AI parsing, dataset storage, and insights.
 
-1. Install dependencies
+---
 
-   ```bash
-   npm install
-   ```
+## 🚀 Quick start
 
-2. Start the app
+### Prerequisites
+- Node.js (LTS recommended)
+- npm or yarn
+- Xcode (for iOS simulator) / Android Studio (for Android emulator)
+- Expo CLI via npx (no global install required)
 
-   ```bash
-   npx expo start
-   ```
-
-In the output, you'll find options to open the app in a
-
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
-
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
-
-## Get a fresh project
-
-When you're ready, run:
+### Install
 
 ```bash
-npm run reset-project
+npm install
+# or
+yarn install
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+### Environment variables
+Create a `.env` file in the project root (DO NOT commit it). Use the example below in `.env.example`.
 
-## Learn more
+`.env.example`
+```env
+# OCR provider key (e.g. ocr.space)
+EXPO_PUBLIC_OCR_API_KEY=your_ocr_api_key_here
 
-To learn more about developing your project with Expo, look at the following resources:
+# Gemini / Google generative language key (optional, used for AI parsing)
+EXPO_PUBLIC_GEMINI_API_KEY=your_gemini_api_key_here
+```
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+> ⚠️ Never commit real keys. Use `.env.example` for required variable names and GitHub Secrets for CI.
 
-## Join the community
+### Start the app
 
-Join our community of developers creating universal apps.
+Open Expo dev tools and run on your platform of choice:
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+```bash
+npx expo start
+npm run ios      # iOS simulator
+npm run android  # Android emulator
+npm run web      # Web preview
+```
+
+---
+
+## ⚙️ Available scripts
+These come from `package.json`:
+
+- `npm start` — start Expo dev tools
+- `npm run ios` — start iOS simulator
+- `npm run android` — start Android emulator
+- `npm run web` — open in browser
+- `npm run reset-project` — reset starter project files (moves examples into `app-example`)
+- `npm run lint` — run ESLint checks
+
+---
+
+## 🧩 Features
+
+- Scan or import receipts from QR / images
+- OCR text extraction (default via OCR.space)
+- Optional AI parsing for structured receipt extraction
+- Local dataset storage (file-based) and insights (spending trends, top products, promos)
+- Smart-lens mock product identification (requires Gemini API key)
+
+---
+
+## 🏗️ Architecture & important files
+
+- `app/` — Expo routes and UI
+- `services/` — core logic (OCR, AI parsing, dataset, insights, storage)
+  - `ocrService.ts` — QR fetching, OCR calls, text parsing
+  - `aiReceiptParser.ts` — fallback/AI-based parsing helpers
+  - `datasetService.ts` — local dataset read/write
+  - `insightsService.ts` — analytics & insights logic
+- `components/` — reusable UI components
+- `data/` — mock data & promotions
+
+---
+
+## 🛠 Developer guide
+
+### Environment
+- Add the required keys to `.env` following `.env.example`.
+- Use `EXPO_PUBLIC_OCR_API_KEY` for OCR and `EXPO_PUBLIC_GEMINI_API_KEY` if you want AI parsing.
+
+### Optional native features
+- For image resizing/compression, install `expo-image-manipulator`:
+
+```bash
+npm install expo-image-manipulator
+```
+
+If you use it, make sure to run a development build or use Expo dev client for native modules.
+
+### Debugging tips
+- If OCR returns empty results, log `response.data` in `ocrService.processReceiptImage` and check `.ParsedResults`.
+- For AI parsing failures, confirm `EXPO_PUBLIC_GEMINI_API_KEY` is present and check network requests.
+- If dataset appears corrupted, `datasetService.clearDataset()` can reset the file.
+
+---
+
+## 🧪 Tests & CI (suggested)
+- Add unit tests for parsers (e.g., `parseReceiptText`, `extractDocIdFromUrl`) and `insightsService` logic.
+- Add a GitHub Actions workflow to run `npm run lint` and tests on PRs.
+
+If you'd like, I can add a sample test and a basic GitHub Actions workflow.
+
+---
+
+## 🔒 Privacy & Security
+
+- Sensitive keys must never be committed. Use `.env` locally and GitHub Secrets for CI.
+- Consider encrypting stored receipts or adding a user toggle to opt-in to cloud sync.
+
+---
+
+## ♻️ Contributing
+
+- Fork the repo, create a branch, add changes, and open a PR.
+- Keep the scope small per PR and include tests for new logic when possible.
+
+---
+
+## 📋 Roadmap ideas
+
+- Cloud sync / multi-device backups (opt-in)
+- Product catalog + live promotions integration
+- Enhanced price-tracking & alerts
+- Supervised learning from user-corrected parses
+
+---
+
+## ❗ Troubleshooting
+
+- **Missing OCR key**: You will see an explicit error — ensure `EXPO_PUBLIC_OCR_API_KEY` exists in `.env`.
+- **e-kassa fetch issues**: verify the QR doc ID and network health.
+- **Native module issues**: use a dev build for native modules or avoid optional native dependencies.
+
+---
+
+If you want, I can open a PR that:
+
+1. Replaces this README with this improved version
+2. Adds a `.env.example`
+3. Adds a small unit test for `parseReceiptText` and a basic GitHub Actions workflow
+
+Tell me which of these you'd like me to apply and I will prepare the PR. ✅
