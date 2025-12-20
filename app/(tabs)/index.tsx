@@ -1,3 +1,22 @@
+import { CustomModal } from '@/components/CustomModal';
+import { FEATURED_PRODUCTS, RECOMMENDED_PRODUCTS } from '@/data/mockData';
+import { checkAndUnlockAchievements } from '@/services/achievementsService';
+import { DatasetEntry, getDatasetEntries } from '@/services/datasetService';
+import { getUserProfile } from '@/services/storageService';
+import { Product, UserProfile } from '@/types';
+import { LinearGradient } from 'expo-linear-gradient';
+import { Href, router } from 'expo-router';
+import {
+  ArrowRight,
+  MapPin,
+  Receipt as ReceiptIcon,
+  ScanLine,
+  ShoppingBag,
+  Sparkles,
+  Tag,
+  Wallet,
+  Zap,
+} from 'lucide-react-native';
 import React, { useEffect, useMemo, useState } from 'react';
 import {
   Dimensions,
@@ -9,25 +28,6 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
-import {
-  MapPin,
-  Receipt as ReceiptIcon,
-  ScanLine,
-  ShoppingBag,
-  Sparkles,
-  Tag,
-  Wallet,
-  Zap,
-  ArrowRight,
-} from 'lucide-react-native';
-import { router, Href } from 'expo-router';
-import { CustomModal } from '@/components/CustomModal';
-import { UserProfile, Product } from '@/types';
-import { getUserProfile } from '@/services/storageService';
-import { getDatasetEntries, DatasetEntry } from '@/services/datasetService';
-import { CATEGORIES, FEATURED_PRODUCTS, RECOMMENDED_PRODUCTS } from '@/data/mockData';
-import { checkAndUnlockAchievements } from '@/services/achievementsService';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -361,7 +361,7 @@ export default function HomeScreen() {
               <View>
                 <Text style={styles.eyebrow}>Loyalty paneli</Text>
                 <Text style={styles.heroTitle}>
-                  Salam, {userProfile?.name || 'dəyərli müştəri'} 👋
+                  Xoş gəlmisiniz 👋
                 </Text>
                 <Text style={styles.heroSubtitle}>Skan etdiyin qəbzlərdən toplanan keşbek və xərcləri izləyin.</Text>
               </View>
@@ -843,7 +843,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   section: {
-    gap: 14,
+    gap: 14
   },
   sectionHeader: {
     flexDirection: 'row',
