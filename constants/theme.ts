@@ -6,47 +6,50 @@
 import { Platform } from 'react-native';
 
 export const Palette = {
-  background: '#030617',
-  backgroundAlt: '#101428',
-  surface: 'rgba(15, 23, 42, 0.85)',
-  card: '#0f172a',
-  glass: 'rgba(148, 163, 184, 0.08)',
-  border: 'rgba(148, 163, 184, 0.25)',
-  textPrimary: '#F8FAFC',
-  textSecondary: '#94A3B8',
-  accent: '#facc15',
-  success: '#4ade80',
-  info: '#60a5fa',
-  warning: '#fb923c',
+  primary: '#006738',
+  secondary: '#FDD000',
+  background: '#F7F7F7',
+  surface: '#FFFFFF',
+  card: '#FFFFFF',
+  border: '#E5E5E5',
+  textPrimary: '#000000',
+  textSecondary: '#666666',
+  accent: '#006738',
+  success: '#006738',
+  info: '#3B82F6',
+  warning: '#F59E0B',
+  error: '#EF4444',
+  lightGreen: '#E6F4EA',
+  lightYellow: '#FFF9E6',
 };
 
 export const Shadows = {
   medium: {
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.35,
-    shadowRadius: 25,
-    elevation: 12,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
   },
   soft: {
-    shadowColor: '#0f172a',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.25,
-    shadowRadius: 16,
-    elevation: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 1,
   },
 };
 
-const tintColorLight = Palette.accent;
-const tintColorDark = Palette.accent;
+const tintColorLight = Palette.primary;
+const tintColorDark = Palette.primary;
 
 export const Colors = {
   light: {
-    text: '#11181C',
-    background: '#fff',
+    text: Palette.textPrimary,
+    background: Palette.background,
     tint: tintColorLight,
-    icon: '#687076',
-    tabIconDefault: '#687076',
+    icon: Palette.textSecondary,
+    tabIconDefault: '#9CA3AF',
     tabIconSelected: tintColorLight,
   },
   dark: {
@@ -54,7 +57,7 @@ export const Colors = {
     background: Palette.background,
     tint: tintColorDark,
     icon: Palette.textSecondary,
-    tabIconDefault: Palette.textSecondary,
+    tabIconDefault: '#9CA3AF',
     tabIconSelected: tintColorDark,
   },
 };
