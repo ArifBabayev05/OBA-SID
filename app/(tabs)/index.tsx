@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 import { Palette } from '@/constants/theme';
 import { getUserProfile } from '@/services/storageService';
 import { UserProfile } from '@/types';
@@ -16,6 +17,28 @@ import {
   Zap,
 } from 'lucide-react-native';
 import React, { useEffect, useState } from 'react';
+=======
+import { CustomModal } from '@/components/CustomModal';
+import { FEATURED_PRODUCTS, RECOMMENDED_PRODUCTS } from '@/data/mockData';
+import { checkAndUnlockAchievements } from '@/services/achievementsService';
+import { DatasetEntry, getDatasetEntries } from '@/services/datasetService';
+import { getUserProfile } from '@/services/storageService';
+import { Product, UserProfile } from '@/types';
+import { LinearGradient } from 'expo-linear-gradient';
+import { Href, router } from 'expo-router';
+import {
+  ArrowRight,
+  MapPin,
+  Receipt as ReceiptIcon,
+  ScanLine,
+  ShoppingBag,
+  Sparkles,
+  Tag,
+  Wallet,
+  Zap,
+} from 'lucide-react-native';
+import React, { useEffect, useMemo, useState } from 'react';
+>>>>>>> a4cfaf6f68f89d5838284371fa816a4df37a8699
 import {
   Dimensions,
   Image,
@@ -71,6 +94,7 @@ export default function HomeScreen() {
             colors={[Palette.primary, '#004d23']}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
+<<<<<<< HEAD
             style={styles.headerBg}
           >
             <SafeAreaView style={styles.headerSafe}>
@@ -93,6 +117,17 @@ export default function HomeScreen() {
                     <View style={styles.notifDot} />
                   </TouchableOpacity>
                 </View>
+=======
+          />
+          <View style={styles.heroContent}>
+            <View style={styles.heroHeader}>
+              <View>
+                <Text style={styles.eyebrow}>Loyalty paneli</Text>
+                <Text style={styles.heroTitle}>
+                  Xoş gəlmisiniz 👋
+                </Text>
+                <Text style={styles.heroSubtitle}>Skan etdiyin qəbzlərdən toplanan keşbek və xərcləri izləyin.</Text>
+>>>>>>> a4cfaf6f68f89d5838284371fa816a4df37a8699
               </View>
 
               {/* Stories */}
@@ -396,9 +431,141 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     marginBottom: 8,
   },
+<<<<<<< HEAD
   obaTagText: {
     color: Palette.secondary,
     fontWeight: '900',
+=======
+  barcodeHint: {
+    color: '#1e293b',
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  section: {
+    gap: 14
+  },
+  sectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: COLORS.textPrimary,
+  },
+  sectionLink: {
+    color: COLORS.accentSecondary,
+    fontWeight: '600',
+    fontSize: 13,
+  },
+  quickGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+  },
+  flowContainer: {
+    flexDirection: 'row',
+    gap: 12,
+    flexWrap: 'wrap',
+  },
+  flowCard: {
+    flexBasis: '31%',
+    backgroundColor: 'rgba(11, 21, 41, 0.8)',
+    borderRadius: 18,
+    padding: 14,
+    borderWidth: 1,
+    borderColor: 'rgba(148,163,184,0.15)',
+    gap: 8,
+    minWidth: 120,
+  },
+  flowBadge: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: 'rgba(148,163,184,0.2)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  flowBadgeText: {
+    color: '#fff',
+    fontWeight: '700',
+  },
+  flowTitle: {
+    color: '#fff',
+    fontWeight: '600',
+  },
+  flowDescription: {
+    color: COLORS.textSecondary,
+    fontSize: 12,
+    lineHeight: 16,
+  },
+  quickCard: {
+    flexBasis: (SCREEN_WIDTH - 24 * 2 - 12) / 2,
+    backgroundColor: COLORS.surface,
+    borderRadius: 18,
+    padding: 16,
+    gap: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.2,
+    shadowRadius: 12,
+    elevation: 3,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+  },
+  quickIcon: {
+    height: 40,
+    width: 40,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  quickLabel: {
+    fontWeight: '600',
+    fontSize: 15,
+    color: COLORS.textPrimary,
+  },
+  quickHint: {
+    color: COLORS.textSecondary,
+    fontSize: 13,
+  },
+  promoRow: {
+    gap: 16,
+    paddingVertical: 4,
+  },
+  promoCard: {
+    width: SCREEN_WIDTH * 0.72,
+    height: 170,
+    borderRadius: 24,
+    overflow: 'hidden',
+    backgroundColor: COLORS.surfaceElevated,
+    marginRight: 16,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+  },
+  promoImage: {
+    ...StyleSheet.absoluteFillObject,
+  },
+  promoGradient: {
+    ...StyleSheet.absoluteFillObject,
+  },
+  promoTextBlock: {
+    position: 'absolute',
+    left: 20,
+    right: 20,
+    bottom: 20,
+    gap: 6,
+  },
+  promoAccentDot: {
+    height: 6,
+    width: 40,
+    borderRadius: 999,
+  },
+  promoTitle: {
+    color: COLORS.textPrimary,
+    fontWeight: '700',
+>>>>>>> a4cfaf6f68f89d5838284371fa816a4df37a8699
     fontSize: 20,
     fontStyle: 'italic',
   },
