@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "OBA-SİD",
-    "slug": "oba-sid",
+    "name": "OBA-SID",
+    "slug": "OBA-SID",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",

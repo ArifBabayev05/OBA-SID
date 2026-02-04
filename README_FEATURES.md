@@ -51,7 +51,7 @@
 ## 🚀 Necə başlamaq?
 
 ```bash
-cd receipt-loyalty-app
+cd OBA-SID
 npm install
 npx expo start
 ```
