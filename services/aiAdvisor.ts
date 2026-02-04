@@ -1,5 +1,4 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Alert } from 'react-native';
 import { DatasetEntry } from './datasetService';
 import { buildInsights } from './insightsService';
 
@@ -10,25 +9,18 @@ export interface AISummary {
   bulletPoints: string[];
   recommendations: string[];
   timestamp: string;
-  // NEW: Enhanced AI insights
   spendingTrend: 'increasing' | 'decreasing' | 'stable';
   savingsTip: string;
   weeklyPrediction?: string;
 }
 
 const callLLM = async (prompt: string): Promise<string | null> => {
-  // Gemini API key (Expo üçün public prefix ilə)
   const apiKey = "AIzaSyAQQnX3bEfBbd72QXzVEC4YCnKxHVsp25k";
+  if (!apiKey) return null;
 
-  if (!apiKey) {
-    console.warn('Gemini API key tapılmadı (EXPO_PUBLIC_GEMINI_API_KEY).');
-    return null;
-  }
-
-  const model = 'gemini-2.0-flash-lite'; // pulsuz, sürətli model
+  const model = 'gemini-2.0-flash';
   const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
 
-  // “system prompt” yoxdu, ona görə instruction-u user mətni ilə birləşdiririk
   const fullPrompt = `
 Sən Azərbaycan alıcıları üçün şəxsi grocery qənaət köməkçisisən.
 Cavabları çox qısa, praktik və sadə Azərbaycan dilində yaz.
@@ -54,29 +46,21 @@ ${prompt}
     });
 
     if (!response.ok) {
-      const text = await response.text();
-      console.warn('Gemini AI advisor request failed', text);
-      Alert.alert('Advisor API Error', text);
       return null;
     }
 
     const data = await response.json();
-    console.log('Gemini response', JSON.stringify(data, null, 2));
-
     const text =
       data?.candidates?.[0]?.content?.parts?.[0]?.text ??
       data?.candidates?.[0]?.content?.parts?.[0]?.inlineData ??
       null;
 
     if (!text) {
-      console.warn('Gemini cavabında mətn tapılmadı.');
       return null;
     }
 
     return text as string;
   } catch (error: any) {
-    console.warn('Gemini AI advisor error', error);
-    Alert.alert('Advisor Network Error', error?.message || 'Unknown error');
     return null;
   }
 };
@@ -105,7 +89,6 @@ export const generateAISummary = async (entries: DatasetEntry[]): Promise<AISumm
   const totalSpend = entries.reduce((sum, e) => sum + (e.totalAmount || 0), 0);
   const topProducts = insights.topProducts.slice(0, 3).map(p => p.name).join(', ') || 'məlumat yoxdur';
 
-  // NEW: Calculate spending trend
   const weeklyTrends = insights.weeklyTrends;
   let spendingTrend: 'increasing' | 'decreasing' | 'stable' = 'stable';
   if (weeklyTrends.length >= 2) {
@@ -118,7 +101,6 @@ export const generateAISummary = async (entries: DatasetEntry[]): Promise<AISumm
     }
   }
 
-  // NEW: Savings opportunity
   const savingsOpportunity = insights.savingsOpportunity;
   const prediction = insights.spendingPrediction;
 
@@ -196,7 +178,6 @@ export const getLatestAISummary = async (): Promise<AISummary | null> => {
     const stored = await AsyncStorage.getItem(AI_SUMMARY_KEY);
     return stored ? (JSON.parse(stored) as AISummary) : null;
   } catch (error) {
-    console.error('Failed to load AI summary', error);
     return null;
   }
 };
@@ -205,6 +186,5 @@ export const clearAISummary = async (): Promise<void> => {
   try {
     await AsyncStorage.removeItem(AI_SUMMARY_KEY);
   } catch (error) {
-    console.error('Failed to clear AI summary', error);
   }
 };

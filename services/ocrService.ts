@@ -1,7 +1,6 @@
 import axios from 'axios';
 import { Buffer } from 'buffer';
 import * as FileSystem from 'expo-file-system/legacy';
-import { Alert } from 'react-native';
 import { PurchaseItem, Receipt } from '../types';
 
 if (typeof (globalThis as any).Buffer === 'undefined') {
@@ -17,7 +16,6 @@ export const extractDocIdFromUrl = (url: string): string | null => {
     const match = url.match(/doc=([^&]+)/);
     return match ? match[1] : null;
   } catch (error) {
-    console.error('Error extracting doc ID:', error);
     return null;
   }
 };
@@ -53,15 +51,7 @@ export const fetchReceiptFromEKassa = async (docId: string): Promise<string> => 
 
     return fileUri;
   } catch (error: any) {
-    const errorMessage = error?.message || error?.toString() || 'Unknown error';
-    const errorDetails = error?.response?.data || error?.response?.statusText || '';
-
-    console.error('Error fetching from e-kassa:', errorMessage);
-    if (errorDetails) {
-      console.error('Error details:', errorDetails);
-    }
-
-    throw new Error(`Failed to fetch receipt: ${errorMessage}`);
+    throw new Error(`Failed to fetch receipt: ${error?.message || 'Unknown error'}`);
   }
 };
 
@@ -87,23 +77,17 @@ export const processReceiptImage = async (imageUri: string): Promise<Partial<Rec
     if (response.data && response.data.ParsedResults && response.data.ParsedResults.length > 0) {
       const parsedText = response.data.ParsedResults[0].ParsedText;
       const lines = parsedText.split('\n');
-      console.log('[OCR] Parsed Text Preview:', parsedText.substring(0, 300));
 
-      // Try AI parsing first for better accuracy
       const aiParsed = await aiParseReceiptStructure(parsedText);
       let total = 0;
       let items: PurchaseItem[] = [];
       let detectedStore: string | undefined;
 
       if (aiParsed && aiParsed.totalAmount && aiParsed.items && aiParsed.items.length > 0) {
-        // Use AI-parsed data
         total = aiParsed.totalAmount;
         items = aiParsed.items;
         detectedStore = aiParsed.storeName;
-        console.log('[OCR] Using AI-parsed data');
       } else {
-        // Fallback to manual parsing
-        console.log('[OCR] Falling back to manual parsing');
         const parsed = parseReceiptText(lines);
         total = parsed.total;
         items = parsed.items;
@@ -113,7 +97,7 @@ export const processReceiptImage = async (imageUri: string): Promise<Partial<Rec
       const storeName = detectedStore || extractStoreName(parsedText);
 
       return {
-        text: parsedText.substring(0, 500), // Limit text size to avoid AsyncStorage errors
+        text: parsedText.substring(0, 500),
         totalAmount: total,
         items,
         date: new Date().toISOString(),
@@ -126,7 +110,6 @@ export const processReceiptImage = async (imageUri: string): Promise<Partial<Rec
 
     throw new Error('No text found in receipt');
   } catch (error) {
-    console.error('OCR Error:', error);
     throw error;
   }
 };
@@ -145,7 +128,6 @@ export const processQRCode = async (qrData: string): Promise<Partial<Receipt>> =
     if (!receiptData.text) {
       throw new Error('Failed to extract data from receipt');
     }
-    console.log('[QR] OCR Text:', receiptData.text);
 
     const storeName =
       extractStoreName(receiptData.text) ||
@@ -157,12 +139,10 @@ export const processQRCode = async (qrData: string): Promise<Partial<Receipt>> =
       id: Date.now().toString(),
       date: receiptData.date || new Date().toISOString(),
       storeName,
-      fiscalId: docId, // Save docId from QR URL as fiscalId
+      fiscalId: docId,
     };
   } catch (error: any) {
-    const errorMessage = error?.message || error?.toString() || 'Unknown error';
-    console.error('QR Processing Error:', errorMessage);
-    throw new Error(errorMessage);
+    throw new Error(error?.message || 'Unknown error');
   }
 };
 
@@ -212,10 +192,6 @@ const parseReceiptText = (
   return { total, items, detectedStore };
 };
 
-const detectNumericAnomaly = (lines: string[]) => {
-  return lines.some((line) => dateRegex.test(line) && line.trim().length <= 10);
-};
-
 const extractStoreName = (text: string): string | undefined => {
   if (!text) return undefined;
   const storeMatch =
@@ -261,21 +237,21 @@ const aiParseReceiptStructure = async (
   const apiKey = "AIzaSyAQQnX3bEfBbd72QXzVEC4YCnKxHVsp25k";
   if (!apiKey) return null;
 
-  const model = 'gemini-2.0-flash-lite';
+  const model = 'gemini-2.0-flash';
   const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
   const prompt = `
-Sən OCR mətni analiz edən assistanssan. Aşağıdakı qəbz mətnini təhlil et və strukturlu JSON cavab ver.
+Sən OCR mətni analiz edən assistanssan. Aşağıdakı qəbz mətini təhlil et və strukturlu JSON cavab ver.
 
 VACIB QAYDA:
-1. "storeName": Mağaza adını dəqiq tap. Qəbzin ən üst hissəsində, ilk textin içində obyekt adı yazılır. Mağaza adları adətən qəbzin ilk sətirlərində olur. "Obyektin adı:" və ya "Vergi ödayicisinin ad" yazılarından sonra da ola bilər.
-2. "items": YALNIZ mahsul adlarını daxil et. Cash, Cashless, Bonus, Prepayment, Credit, Nağd, Nağdsız, Fiscal, və s. kimi ödəniş/texniki sətirləri DAXIL ETMƏ.
-3. "totalAmount": "Cəmi", "Total", "Sum", "Cami" kimi sözlərin yanındakı ümumi məbləği tap. Bu ən böyük məbləğ olmalıdır.
+1. "storeName": Mağaza adını dəqiq tap. 
+2. "items": YALNIZ mahsul adlarını daxil et.
+3. "totalAmount": Ümumi məbləği tap.
 
 JSON Schema:
 {
- "storeName": string (məs: "MOMENTUM COFFEE CO." və ya "AL MARKET"),
- "items": [{ "name": string (yalnız məhsul adı), "price": number }],
- "totalAmount": number (Cəmi/Total rəqəmi)
+ "storeName": string,
+ "items": [{ "name": string, "price": number }],
+ "totalAmount": number
 }
 
 OCR Mətni:
@@ -283,7 +259,7 @@ OCR Mətni:
 ${text}
 """
 
-Yalnız JSON cavab ver, başqa heç nə yazmadan.
+Yalnız JSON cavab ver.
   `.trim();
 
   try {
@@ -296,9 +272,6 @@ Yalnız JSON cavab ver, başqa heç nə yazmadan.
       }),
     });
     if (!response.ok) {
-      const errText = await response.text();
-      console.warn('aiParseReceiptStructure failed', errText);
-      Alert.alert('OCR Parser API Error', errText);
       return null;
     }
     const data = await response.json();
@@ -308,8 +281,6 @@ Yalnız JSON cavab ver, başqa heç nə yazmadan.
     if (!textPart) return null;
     const parsed = JSON.parse(textPart);
     if (!parsed) return null;
-
-    console.log('[AI Parser] Store:', parsed.storeName, 'Total:', parsed.totalAmount, 'Items:', parsed.items?.length);
 
     return {
       storeName: parsed.storeName,
@@ -325,8 +296,6 @@ Yalnız JSON cavab ver, başqa heç nə yazmadan.
         : undefined,
     };
   } catch (error: any) {
-    console.warn('aiParseReceiptStructure error', error);
-    Alert.alert('OCR Parser Network Error', error?.message || 'Unknown error');
     return null;
   }
 };

@@ -1,10 +1,10 @@
 import { FEATURED_PRODUCTS, RECOMMENDED_PRODUCTS } from '@/data/mockData';
 import * as FileSystem from 'expo-file-system/legacy';
-import { Alert } from 'react-native';
 
 const API_KEY = "AIzaSyAQQnX3bEfBbd72QXzVEC4YCnKxHVsp25k";
-// Using gemini-1.5-flash because it supports vision and is fast
-const GEMINI_URL = `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${API_KEY}`;
+// Gemini 2.0 Flash is state of the art and fast. 
+// Using v1beta for maximum compatibility with latest models.
+const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${API_KEY}`;
 
 // Mock location metadata
 const STORE_META: Record<
@@ -99,13 +99,11 @@ export interface ProductAnalysis {
 
 export const identifyProductFromImage = async (imageUri: string): Promise<ProductAnalysis | null> => {
   if (!API_KEY) {
-    console.warn('Gemini API key is missing');
     return null;
   }
 
   try {
     const base64Data = await FileSystem.readAsStringAsync(imageUri, {
-      // Some Expo versions expose EncodingType differently, fallback to raw string
       encoding: (FileSystem as any).EncodingType
         ? (FileSystem as any).EncodingType.Base64
         : 'base64',
@@ -140,33 +138,24 @@ Markdown, şərh və ya mətn əlavə ETMƏ.
     });
 
     if (!response.ok) {
-      const errText = await response.text();
-      Alert.alert('Gemini Error', errText);
       return null;
     }
 
     const data = await response.json();
-    // console.log('Gemini response', JSON.stringify(data, null, 2));
     const candidate = data?.candidates?.[0];
     const parts = candidate?.content?.parts ?? [];
     const textPart = parts.find((part: any) => typeof part.text === 'string' && part.text.trim().length > 0);
     const text = textPart?.text?.trim();
 
     if (!text) {
-      console.warn('No text returned from Gemini', {
-        finishReason: candidate?.finishReason,
-        safetyRatings: candidate?.safetyRatings,
-      });
       return null;
     }
 
-    // Clean up markdown if present (e.g. ```json ... ```)
     const jsonStr = text.replace(/```json|```/g, '').trim();
     let result;
     try {
       result = JSON.parse(jsonStr);
     } catch (e) {
-      console.warn('Failed to parse JSON from AI:', text);
       return null;
     }
 
@@ -179,34 +168,21 @@ Markdown, şərh və ya mətn əlavə ETMƏ.
       ? result.confidence
       : 0.65;
 
-    // Lower threshold slightly to be more permissive, but keep it reasonable
     if (confidence < 0.25) {
       return null;
     }
 
-    // Find matches in mock database (Oba Market products only)
     const allProducts = [...FEATURED_PRODUCTS, ...RECOMMENDED_PRODUCTS];
 
-    // 1. Try exact name match or partial match
     let matches = allProducts.filter(p =>
       p.name.toLowerCase().includes(result.name.toLowerCase()) ||
       result.name.toLowerCase().includes(p.name.toLowerCase())
     );
 
-    // 2. If no exact matches, fallback to category for specific categories (e.g. fruits)
-    // But be careful not to suggest random things for distinct items like "iPhone" -> "Makaron"
     if (matches.length === 0) {
       const categoryMatches = allProducts.filter(p =>
         p.category.toLowerCase() === result.category.toLowerCase()
       );
-      // Only include category matches if they share some keyword or strictly same category?
-      // For now, let's include top 3 category matches if empty
-      // But only if category is 'Food' related?
-      // User request: "Oba marketdə satılmaz deyə... tapılmadı bildir".
-      // So if I scan a 'Bracelet' and Oba doesn't sell it, matches should be empty.
-
-      // Let's only use category fallback if the detected category is one of our known categories 
-      // (from mockData logic).
       const knownCategories = new Set(allProducts.map(p => p.category.toLowerCase()));
       if (knownCategories.has(result.category.toLowerCase())) {
         matches = categoryMatches.slice(0, 3);
@@ -215,7 +191,6 @@ Markdown, şərh və ya mətn əlavə ETMƏ.
 
     const foundInStore = matches.length > 0;
 
-    // Format and sort by price
     const finalMatches = matches
       .map(p => {
         const meta = STORE_META[p.store] ?? randomMeta();
@@ -251,7 +226,6 @@ Markdown, şərh və ya mətn əlavə ETMƏ.
     };
 
   } catch (error) {
-    console.error('Smart Lens error:', error);
     return null;
   }
 };
