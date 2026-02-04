@@ -1,9 +1,10 @@
 import { FEATURED_PRODUCTS, RECOMMENDED_PRODUCTS } from '@/data/mockData';
 import * as FileSystem from 'expo-file-system/legacy';
+import { Alert } from 'react-native';
 
-const API_KEY = process.env.EXPO_PUBLIC_GEMINI_API_KEY;
+const API_KEY = "AIzaSyAQQnX3bEfBbd72QXzVEC4YCnKxHVsp25k";
 // Using gemini-1.5-flash because it supports vision and is fast
-const GEMINI_URL = `https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash:generateContent?key=${API_KEY}`;
+const GEMINI_URL = `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${API_KEY}`;
 
 // Mock location metadata
 const STORE_META: Record<
@@ -137,6 +138,12 @@ Markdown, şərh və ya mətn əlavə ETMƏ.
         }]
       })
     });
+
+    if (!response.ok) {
+      const errText = await response.text();
+      Alert.alert('Gemini Error', errText);
+      return null;
+    }
 
     const data = await response.json();
     // console.log('Gemini response', JSON.stringify(data, null, 2));

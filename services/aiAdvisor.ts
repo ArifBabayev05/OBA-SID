@@ -1,4 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Alert } from 'react-native';
 import { DatasetEntry } from './datasetService';
 import { buildInsights } from './insightsService';
 
@@ -17,7 +18,7 @@ export interface AISummary {
 
 const callLLM = async (prompt: string): Promise<string | null> => {
   // Gemini API key (Expo üçün public prefix ilə)
-  const apiKey = process.env.EXPO_PUBLIC_GEMINI_API_KEY;
+  const apiKey = "AIzaSyAQQnX3bEfBbd72QXzVEC4YCnKxHVsp25k";
 
   if (!apiKey) {
     console.warn('Gemini API key tapılmadı (EXPO_PUBLIC_GEMINI_API_KEY).');
@@ -55,6 +56,7 @@ ${prompt}
     if (!response.ok) {
       const text = await response.text();
       console.warn('Gemini AI advisor request failed', text);
+      Alert.alert('Advisor API Error', text);
       return null;
     }
 
@@ -72,8 +74,9 @@ ${prompt}
     }
 
     return text as string;
-  } catch (error) {
+  } catch (error: any) {
     console.warn('Gemini AI advisor error', error);
+    Alert.alert('Advisor Network Error', error?.message || 'Unknown error');
     return null;
   }
 };
@@ -81,7 +84,7 @@ ${prompt}
 
 export const generateAISummary = async (entries: DatasetEntry[]): Promise<AISummary> => {
   const insights = buildInsights(entries);
-  
+
   if (entries.length === 0) {
     return {
       headline: 'Qəbz skan etməyə başlayın',
@@ -101,7 +104,7 @@ export const generateAISummary = async (entries: DatasetEntry[]): Promise<AISumm
   const latestTotal = entries[0]?.totalAmount?.toFixed(2) ?? '0.00';
   const totalSpend = entries.reduce((sum, e) => sum + (e.totalAmount || 0), 0);
   const topProducts = insights.topProducts.slice(0, 3).map(p => p.name).join(', ') || 'məlumat yoxdur';
-  
+
   // NEW: Calculate spending trend
   const weeklyTrends = insights.weeklyTrends;
   let spendingTrend: 'increasing' | 'decreasing' | 'stable' = 'stable';
@@ -149,12 +152,12 @@ Azərbaycan dilində yaz. Ümumi sözlər yox, KONKRET rəqəm və təkliflər v
 
   const llmResponse = await callLLM(basePrompt);
 
-  let headline = spendingTrend === 'increasing' 
+  let headline = spendingTrend === 'increasing'
     ? 'Xərcləriniz artmaqdadır'
     : spendingTrend === 'decreasing'
-    ? 'Yaxşı iş! Xərcləriniz azalır'
-    : 'Xərcləriniz sabitdir';
-    
+      ? 'Yaxşı iş! Xərcləriniz azalır'
+      : 'Xərcləriniz sabitdir';
+
   let recommendations: string[] = [
     `${latestStore} mağazasında son alışınız ${latestTotal} AZN olub`,
     `Bu ay ${insights.monthlySpend.toFixed(2)} AZN xərcləmisiniz`,
@@ -167,7 +170,7 @@ Azərbaycan dilində yaz. Ümumi sözlər yox, KONKRET rəqəm və təkliflər v
     if (headlineLine) {
       headline = headlineLine.replace(/başlıq:/i, '').replace(/^[-•\s]+/, '').trim();
     }
-    
+
     const recLines = lines.filter(l => (l.trim().startsWith('-') || l.trim().startsWith('•')) && l.length > 10);
     if (recLines.length > 0) {
       recommendations = recLines.map(l => l.replace(/^[-•\s]+/, '').trim()).slice(0, 3);
@@ -205,4 +208,3 @@ export const clearAISummary = async (): Promise<void> => {
     console.error('Failed to clear AI summary', error);
   }
 };
-

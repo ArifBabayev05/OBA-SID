@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "OBA-SID",
-    "slug": "OBA-SID",
+    "slug": "receipt-loyalty-app",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
@@ -74,6 +74,7 @@
       "eas": {
         "projectId": "d6305a53-bd10-4b76-afcc-3fd95948dfc1"
       }
-    }
+    },
+    "owner": "arifbabayev"
   }
 }

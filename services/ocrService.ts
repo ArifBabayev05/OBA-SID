@@ -1,7 +1,8 @@
 import axios from 'axios';
-import * as FileSystem from 'expo-file-system/legacy';
 import { Buffer } from 'buffer';
-import { Receipt, PurchaseItem } from '../types';
+import * as FileSystem from 'expo-file-system/legacy';
+import { Alert } from 'react-native';
+import { PurchaseItem, Receipt } from '../types';
 
 if (typeof (globalThis as any).Buffer === 'undefined') {
   (globalThis as any).Buffer = Buffer;
@@ -35,7 +36,7 @@ export const fetchReceiptFromEKassa = async (docId: string): Promise<string> => 
         responseType: 'arraybuffer',
       }
     );
-    
+
     if (!response || !response.data) {
       throw new Error('Invalid response from e-kassa API');
     }
@@ -49,17 +50,17 @@ export const fetchReceiptFromEKassa = async (docId: string): Promise<string> => 
     await FileSystem.writeAsStringAsync(fileUri, base64Data, {
       encoding: (FileSystem as any).EncodingType?.Base64 ?? 'base64',
     });
-    
+
     return fileUri;
   } catch (error: any) {
     const errorMessage = error?.message || error?.toString() || 'Unknown error';
     const errorDetails = error?.response?.data || error?.response?.statusText || '';
-    
+
     console.error('Error fetching from e-kassa:', errorMessage);
     if (errorDetails) {
       console.error('Error details:', errorDetails);
     }
-    
+
     throw new Error(`Failed to fetch receipt: ${errorMessage}`);
   }
 };
@@ -68,7 +69,7 @@ export const fetchReceiptFromEKassa = async (docId: string): Promise<string> => 
 export const processReceiptImage = async (imageUri: string): Promise<Partial<Receipt>> => {
   try {
     const formData = new FormData();
-    
+
     formData.append('file', {
       uri: imageUri,
       name: 'receipt.jpg',
@@ -87,13 +88,13 @@ export const processReceiptImage = async (imageUri: string): Promise<Partial<Rec
       const parsedText = response.data.ParsedResults[0].ParsedText;
       const lines = parsedText.split('\n');
       console.log('[OCR] Parsed Text Preview:', parsedText.substring(0, 300));
-      
+
       // Try AI parsing first for better accuracy
       const aiParsed = await aiParseReceiptStructure(parsedText);
       let total = 0;
       let items: PurchaseItem[] = [];
       let detectedStore: string | undefined;
-      
+
       if (aiParsed && aiParsed.totalAmount && aiParsed.items && aiParsed.items.length > 0) {
         // Use AI-parsed data
         total = aiParsed.totalAmount;
@@ -108,7 +109,7 @@ export const processReceiptImage = async (imageUri: string): Promise<Partial<Rec
         items = parsed.items;
         detectedStore = parsed.detectedStore;
       }
-      
+
       const storeName = detectedStore || extractStoreName(parsedText);
 
       return {
@@ -122,7 +123,7 @@ export const processReceiptImage = async (imageUri: string): Promise<Partial<Rec
         id: Date.now().toString(),
       };
     }
-    
+
     throw new Error('No text found in receipt');
   } catch (error) {
     console.error('OCR Error:', error);
@@ -257,7 +258,7 @@ const extractFiscalId = (text: string): string | undefined => {
 const aiParseReceiptStructure = async (
   text: string
 ): Promise<{ items?: PurchaseItem[]; totalAmount?: number; storeName?: string } | null> => {
-  const apiKey = process.env.EXPO_PUBLIC_GEMINI_API_KEY;
+  const apiKey = "AIzaSyAQQnX3bEfBbd72QXzVEC4YCnKxHVsp25k";
   if (!apiKey) return null;
 
   const model = 'gemini-2.0-flash-lite';
@@ -295,7 +296,9 @@ Yalnız JSON cavab ver, başqa heç nə yazmadan.
       }),
     });
     if (!response.ok) {
-      console.warn('aiParseReceiptStructure failed', await response.text());
+      const errText = await response.text();
+      console.warn('aiParseReceiptStructure failed', errText);
+      Alert.alert('OCR Parser API Error', errText);
       return null;
     }
     const data = await response.json();
@@ -305,24 +308,25 @@ Yalnız JSON cavab ver, başqa heç nə yazmadan.
     if (!textPart) return null;
     const parsed = JSON.parse(textPart);
     if (!parsed) return null;
-    
+
     console.log('[AI Parser] Store:', parsed.storeName, 'Total:', parsed.totalAmount, 'Items:', parsed.items?.length);
-    
+
     return {
       storeName: parsed.storeName,
       totalAmount: parsed.totalAmount,
       items: Array.isArray(parsed.items)
         ? parsed.items
-            .filter((it: any) => it?.name && it?.price)
-            .map((it: any) => ({
-              name: it.name,
-              price: Number(it.price),
-              category: categorizeProduct(it.name),
-            }))
+          .filter((it: any) => it?.name && it?.price)
+          .map((it: any) => ({
+            name: it.name,
+            price: Number(it.price),
+            category: categorizeProduct(it.name),
+          }))
         : undefined,
     };
-  } catch (error) {
+  } catch (error: any) {
     console.warn('aiParseReceiptStructure error', error);
+    Alert.alert('OCR Parser Network Error', error?.message || 'Unknown error');
     return null;
   }
 };
