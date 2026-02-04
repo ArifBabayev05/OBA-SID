@@ -1,4 +1,6 @@
-import { Palette } from '@/constants/theme';
+import { Palette, Shadows } from '@/constants/theme';
+import { getDatasetEntries } from '@/services/datasetService';
+import { buildInsights, InsightsResult } from '@/services/insightsService';
 import { getUserProfile } from '@/services/storageService';
 import { UserProfile } from '@/types';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -35,6 +37,8 @@ import {
 
 export default function ProfileScreen() {
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
+  const [entries, setEntries] = useState<any[]>([]);
+  const [insights, setInsights] = useState<InsightsResult | null>(null);
 
   useEffect(() => {
     loadData();
@@ -42,14 +46,17 @@ export default function ProfileScreen() {
 
   const loadData = async () => {
     const profile = await getUserProfile();
+    const data = await getDatasetEntries();
     setUserProfile(profile);
+    setEntries(data);
+    setInsights(buildInsights(data));
   };
 
   const renderMenuItem = (icon: any, label: string, color: string = Palette.primary, isDestructive: boolean = false, route?: string) => {
     const Icon = icon;
     return (
-      <TouchableOpacity 
-        style={[styles.menuItem, isDestructive && styles.destructiveItem]} 
+      <TouchableOpacity
+        style={[styles.menuItem, isDestructive && styles.destructiveItem]}
         activeOpacity={0.7}
         onPress={() => route && router.push(route as any)}
       >
@@ -67,7 +74,7 @@ export default function ProfileScreen() {
   return (
     <View style={styles.container}>
       <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
-      
+
       {/* Premium Header */}
       <View style={styles.headerContainer}>
         <LinearGradient
@@ -91,8 +98,8 @@ export default function ProfileScreen() {
                   style={styles.avatarRing}
                 >
                   <View style={styles.avatarInner}>
-                    <Image 
-                      source={{ uri: 'https://ui-avatars.com/api/?name=Arif+Babayev&background=445566&color=fff&size=200' }} 
+                    <Image
+                      source={{ uri: 'https://ui-avatars.com/api/?name=Arif+Babayev&background=445566&color=fff&size=200' }}
                       style={styles.avatarImg}
                     />
                   </View>
@@ -101,7 +108,7 @@ export default function ProfileScreen() {
                   <Pencil size={12} color={Palette.primary} strokeWidth={2.5} />
                 </TouchableOpacity>
               </View>
-              
+
               <View style={styles.profileInfo}>
                 <Text style={styles.profileName}>A4TB</Text>
                 <View style={styles.loyaltyBadge}>
@@ -114,18 +121,54 @@ export default function ProfileScreen() {
         </LinearGradient>
       </View>
 
-      <ScrollView 
-        showsVerticalScrollIndicator={false} 
+      <ScrollView
+        showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
       >
+        {/* Dashboards Section (Replaces first 2 links) */}
+        <View style={styles.dashboardGrid}>
+          {/* Spending Summary Widget */}
+          <TouchableOpacity
+            style={styles.dashboardCard}
+            onPress={() => router.push('/insights')}
+            activeOpacity={0.8}
+          >
+            <View style={[styles.dashIconBox, { backgroundColor: '#F0FDF4' }]}>
+              <TrendingUp size={20} color={Palette.primary} />
+            </View>
+            <View>
+              <Text style={styles.dashLabel}>Aylıq Xərc</Text>
+              <Text style={styles.dashValue}>{insights?.monthlySpend?.toFixed(2) ?? '0.00'}₼</Text>
+              <Text style={styles.dashLink}>Analizə bax</Text>
+            </View>
+          </TouchableOpacity>
+
+          {/* Quick History Widget */}
+          <TouchableOpacity
+            style={styles.dashboardCard}
+            onPress={() => router.push('/history')}
+            activeOpacity={0.8}
+          >
+            <View style={[styles.dashIconBox, { backgroundColor: '#EFF6FF' }]}>
+              <History size={20} color="#3B82F6" />
+            </View>
+            <View>
+              <Text style={styles.dashLabel}>Son Alış</Text>
+              <Text style={styles.dashValue}>
+                {entries[0] ? new Date(entries[0].createdAt).toLocaleDateString('az-AZ', { day: 'numeric', month: 'short' }) : 'Yoxdur'}
+              </Text>
+              <Text style={[styles.dashLink, { color: '#3B82F6' }]}>Tarixçə</Text>
+            </View>
+          </TouchableOpacity>
+        </View>
+
         {/* Account Section */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Hesab Məlumatları</Text>
           <View style={styles.menuGroup}>
-            {renderMenuItem(History, 'Alış-veriş Tarixçəsi', Palette.primary, false, '/history')}
-            {renderMenuItem(TrendingUp, 'Analitika', Palette.primary, false, '/insights')}
+            {/* History and Analytics are now dashboards above */}
             {renderMenuItem(Lock, 'Şifrəni Dəyişdir')}
-            {renderMenuItem(Bell, 'Bildirişlər')}
+            {renderMenuItem(Bell, 'Bildirişlər', Palette.primary, false, '/notifications')}
             {renderMenuItem(Heart, 'Seçilmiş Məhsullar')}
           </View>
         </View>
@@ -318,5 +361,43 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '600',
     marginTop: 40,
+  },
+  dashboardGrid: {
+    flexDirection: 'row',
+    paddingHorizontal: 20,
+    marginTop: 24,
+    gap: 16,
+  },
+  dashboardCard: {
+    flex: 1,
+    backgroundColor: '#fff',
+    borderRadius: 24,
+    padding: 16,
+    gap: 12,
+    ...Shadows.small,
+  },
+  dashIconBox: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  dashLabel: {
+    fontSize: 12,
+    color: '#94A3B8',
+    fontWeight: '600',
+    marginBottom: 4,
+  },
+  dashValue: {
+    fontSize: 20,
+    fontWeight: '800',
+    color: '#1E293B',
+    marginBottom: 8,
+  },
+  dashLink: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: Palette.primary,
   },
 });

@@ -1,55 +1,34 @@
-<<<<<<< HEAD
-import { Palette } from '@/constants/theme';
+import { Palette, Shadows } from '@/constants/theme';
 import { getUserProfile } from '@/services/storageService';
 import { UserProfile } from '@/types';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import {
   Bell,
-  ChevronRight,
   Heart,
   History,
-  Info,
+  Maximize2,
   Percent,
   Phone,
   ScanLine,
   Smile,
-  Zap,
+  X,
+  Zap
 } from 'lucide-react-native';
 import React, { useEffect, useState } from 'react';
-=======
-import { CustomModal } from '@/components/CustomModal';
-import { FEATURED_PRODUCTS, RECOMMENDED_PRODUCTS } from '@/data/mockData';
-import { checkAndUnlockAchievements } from '@/services/achievementsService';
-import { DatasetEntry, getDatasetEntries } from '@/services/datasetService';
-import { getUserProfile } from '@/services/storageService';
-import { Product, UserProfile } from '@/types';
-import { LinearGradient } from 'expo-linear-gradient';
-import { Href, router } from 'expo-router';
-import {
-  ArrowRight,
-  MapPin,
-  Receipt as ReceiptIcon,
-  ScanLine,
-  ShoppingBag,
-  Sparkles,
-  Tag,
-  Wallet,
-  Zap,
-} from 'lucide-react-native';
-import React, { useEffect, useMemo, useState } from 'react';
->>>>>>> a4cfaf6f68f89d5838284371fa816a4df37a8699
 import {
   Dimensions,
   Image,
+  Modal,
   Platform,
+  Pressable,
   SafeAreaView,
   ScrollView,
   StatusBar,
   StyleSheet,
   Text,
   TouchableOpacity,
-  View,
+  View
 } from 'react-native';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
@@ -65,12 +44,15 @@ const STORIES = [
 const QUICK_ACTIONS = [
   { id: 'history', label: 'Tarixçə', icon: History, route: '/history' },
   { id: 'savings', label: 'Qənaətim', icon: Percent, route: '/(tabs)/recommendations' },
-  { id: 'howtouse', label: 'İstifadə qaydası', icon: Info, route: '/modal' },
   { id: 'favorites', label: 'Seçilmiş\nMəhsullar', icon: Heart, route: '/(tabs)/profile' },
 ];
 
 export default function HomeScreen() {
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
+
+  const [storyModalVisible, setStoryModalVisible] = useState(false);
+  const [selectedStory, setSelectedStory] = useState<any>(null);
+  const [barcodeModalVisible, setBarcodeModalVisible] = useState(false);
 
   useEffect(() => {
     const load = async () => {
@@ -80,31 +62,39 @@ export default function HomeScreen() {
     load();
   }, []);
 
+  const handleStoryPress = (index: number) => {
+    setSelectedStory(STORIES[index]);
+    setStoryModalVisible(true);
+  };
+
   return (
     <View style={styles.container}>
       <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
-      
-      <ScrollView 
+
+      <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
+        bounces={false}
       >
-        {/* Modern Header Section */}
+        {/* Premium Header */}
         <View style={styles.headerContainer}>
           <LinearGradient
-            colors={[Palette.primary, '#004d23']}
+            colors={[Palette.primaryDark, Palette.primary]}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
-<<<<<<< HEAD
             style={styles.headerBg}
           >
             <SafeAreaView style={styles.headerSafe}>
               <View style={styles.headerTop}>
                 <View style={styles.headerLeft}>
-                  <View style={styles.avatarWrapper}>
-                    <Smile size={28} color="#fff" strokeWidth={1.5} />
+                  <View style={styles.avatarContainer}>
+                    <View style={styles.avatarWrapper}>
+                      <Smile size={28} color="#fff" strokeWidth={1.5} />
+                    </View>
+                    <View style={styles.onlineBadge} />
                   </View>
                   <View>
-                    <Text style={styles.greetingText}>Salam</Text>
+                    <Text style={styles.greetingText}>Xoş gəlmisiniz,</Text>
                     <Text style={styles.nameText}>Qonşu</Text>
                   </View>
                 </View>
@@ -112,32 +102,29 @@ export default function HomeScreen() {
                   <TouchableOpacity style={styles.iconButton}>
                     <Phone size={22} color="#fff" />
                   </TouchableOpacity>
-                  <TouchableOpacity style={styles.iconButton}>
+                  <TouchableOpacity
+                    style={styles.iconButton}
+                    onPress={() => router.push('/notifications')}
+                  >
                     <Bell size={22} color="#fff" />
                     <View style={styles.notifDot} />
                   </TouchableOpacity>
                 </View>
-=======
-          />
-          <View style={styles.heroContent}>
-            <View style={styles.heroHeader}>
-              <View>
-                <Text style={styles.eyebrow}>Loyalty paneli</Text>
-                <Text style={styles.heroTitle}>
-                  Xoş gəlmisiniz 👋
-                </Text>
-                <Text style={styles.heroSubtitle}>Skan etdiyin qəbzlərdən toplanan keşbek və xərcləri izləyin.</Text>
->>>>>>> a4cfaf6f68f89d5838284371fa816a4df37a8699
               </View>
 
-              {/* Stories */}
-              <ScrollView 
-                horizontal 
-                showsHorizontalScrollIndicator={false} 
+              {/* Enhanced Stories */}
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
                 contentContainerStyle={styles.storiesScroll}
               >
-                {STORIES.map((story) => (
-                  <TouchableOpacity key={story.id} style={styles.storyContainer} activeOpacity={0.8}>
+                {STORIES.map((story, index) => (
+                  <TouchableOpacity
+                    key={story.id}
+                    style={styles.storyContainer}
+                    activeOpacity={0.8}
+                    onPress={() => handleStoryPress(index)}
+                  >
                     <LinearGradient
                       colors={[Palette.secondary, '#FFD700', Palette.primary]}
                       style={styles.storyGlow}
@@ -154,121 +141,233 @@ export default function HomeScreen() {
           </LinearGradient>
         </View>
 
-        {/* Floating Loyalty Card */}
-        <View style={styles.cardWrapper}>
-          <View style={styles.loyaltyCard}>
-            <View style={styles.cardMain}>
-              <View>
-                <View style={styles.cashbackRow}>
-                  <Text style={styles.cashbackAmount}>16.3</Text>
-                  <Text style={styles.cashbackSymbol}> ₼</Text>
+        {/* Premium Loyalty Card */}
+        <View style={styles.cardSection}>
+          <View style={styles.cardContainer}>
+            <LinearGradient
+              colors={['#ffffff', '#f8f9fa']}
+              style={styles.loyaltyCard}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+            >
+              <View style={styles.cardHeader}>
+                <View>
+                  <Text style={styles.cardLabel}>OBA Bonus</Text>
+                  <View style={styles.balanceRow}>
+                    <Text style={styles.currencySymbol}>₼</Text>
+                    <Text style={styles.balanceAmount}>16.30</Text>
+                  </View>
                 </View>
-                <Text style={styles.cashbackSub}>Mövcud Cashback</Text>
+                <Image
+                  source={{ uri: 'https://upload.wikimedia.org/wikipedia/commons/thumb/d/d0/QR_code_for_mobile_English_Wikipedia.svg/1200px-QR_code_for_mobile_English_Wikipedia.svg.png' }}
+                  style={styles.qrCode}
+                />
               </View>
-              <View style={styles.brandBadge}>
-                <View style={styles.obaTag}>
-                  <Text style={styles.obaTagText}>OBA</Text>
+
+              <TouchableOpacity
+                activeOpacity={0.9}
+                style={styles.barcodeClickArea}
+                onPress={() => setBarcodeModalVisible(true)}
+              >
+                <View style={styles.visualBarcode}>
+                  {[...Array(40)].map((_, i) => (
+                    <View
+                      key={i}
+                      style={[
+                        styles.vBarLine,
+                        {
+                          width: Math.random() > 0.5 ? 2 : 4,
+                          backgroundColor: '#1a1a1a',
+                          height: '100%'
+                        }
+                      ]}
+                    />
+                  ))}
                 </View>
-                <Text style={styles.sloganText}>Qənaətin məkanı,{"\n"}OBAmızın ünvanı!</Text>
-              </View>
-            </View>
-            
-            <View style={styles.cardSeparator} />
-            
-            <View style={styles.barcodeSection}>
-              <View style={styles.barcodeGraphics}>
-                {[...Array(35)].map((_, i) => (
-                  <View 
-                    key={i} 
-                    style={[
-                      styles.barcodeLine, 
-                      { width: i % 4 === 0 ? 3 : 1.5, marginLeft: 2.5 }
-                    ]} 
-                  />
-                ))}
-              </View>
-              <Text style={styles.barcodeNumbers}>1000 0000 0010 3737</Text>
-            </View>
+              </TouchableOpacity>
+
+              {/* Decorative Elements */}
+              <View style={styles.cardDecoCircle} />
+            </LinearGradient>
           </View>
         </View>
 
-        {/* Primary Functional CTAs */}
-        <View style={styles.ctaRow}>
-          <TouchableOpacity 
-            style={[styles.ctaPrimary, { backgroundColor: Palette.primary }]}
+        {/* Main Actions Grid */}
+        <View style={styles.actionGrid}>
+          <TouchableOpacity
+            style={[styles.actionCard, styles.scanCard]}
             onPress={() => router.push('/(tabs)/scan')}
             activeOpacity={0.9}
           >
             <LinearGradient
-              colors={['rgba(255,255,255,0.1)', 'transparent']}
+              colors={[Palette.primary, Palette.primaryDark]}
               style={StyleSheet.absoluteFill}
             />
-            <ScanLine size={22} color="#fff" />
-            <Text style={styles.ctaPrimaryText}>Qəbz skan et</Text>
+            <View style={styles.actionContent}>
+              <View style={styles.actionIconCircle}>
+                <ScanLine size={24} color={Palette.primary} />
+              </View>
+              <Text style={styles.actionTitleLight}>Qəbz skan</Text>
+              <Text style={styles.actionSubtitleLight}>Bonus qazan</Text>
+            </View>
           </TouchableOpacity>
-          
-          <TouchableOpacity 
-            style={[styles.ctaPrimary, { backgroundColor: Palette.secondary }]}
+
+          <TouchableOpacity
+            style={[styles.actionCard, styles.lensCard]}
             onPress={() => router.push({ pathname: '/(tabs)/scan', params: { mode: 'product' } })}
             activeOpacity={0.9}
           >
-            <Zap size={22} color={Palette.primary} fill={Palette.primary} />
-            <Text style={[styles.ctaPrimaryText, { color: Palette.primary }]}>Smart Lens</Text>
+            <LinearGradient
+              colors={[Palette.secondary, '#FBbf24']}
+              style={StyleSheet.absoluteFill}
+            />
+            <View style={styles.actionContent}>
+              <View style={[styles.actionIconCircle, { backgroundColor: 'rgba(255,255,255,0.5)' }]}>
+                <Zap size={24} color="#854d0e" fill="#854d0e" />
+              </View>
+              <Text style={styles.actionTitleDark}>Smart Lens</Text>
+              <Text style={styles.actionSubtitleDark}>Qiymət oxu</Text>
+            </View>
           </TouchableOpacity>
         </View>
 
-        {/* Quick Access Menu */}
-        <View style={styles.quickMenu}>
-          {QUICK_ACTIONS.map((action) => (
-            <TouchableOpacity 
-              key={action.id} 
-              style={styles.menuItem}
-              onPress={() => router.push(action.route as any)}
-            >
-              <View style={styles.menuIconBox}>
-                <action.icon size={26} color={Palette.primary} />
-              </View>
-              <Text style={styles.menuLabel}>{action.label}</Text>
-            </TouchableOpacity>
-          ))}
+        {/* Quick Services */}
+        <View style={styles.servicesSection}>
+          <Text style={styles.sectionHeader}>Xidmətlər</Text>
+          <View style={styles.servicesGrid}>
+            {QUICK_ACTIONS.map((action) => (
+              <TouchableOpacity
+                key={action.id}
+                style={styles.serviceItem}
+                onPress={() => router.push(action.route as any)}
+              >
+                <View style={styles.serviceIconBox}>
+                  <action.icon size={24} color={Palette.primary} />
+                </View>
+                <Text style={styles.serviceLabel}>{action.label}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
         </View>
 
-        {/* Map Preview Section */}
-        <View style={styles.mapSection}>
-          <View style={styles.sectionTop}>
-            <Text style={styles.sectionTitle}>Ən yaxın OBA</Text>
+        {/* Nearest Store Widget */}
+        <View style={styles.widgetSection}>
+          <View style={styles.widgetHeader}>
+            <Text style={styles.sectionHeader}>Ən yaxın filial</Text>
             <TouchableOpacity onPress={() => router.push('/(tabs)/branches')}>
-              <Text style={styles.seeAllText}>Xəritədə göstər</Text>
+              <Text style={styles.linkText}>Hamısı</Text>
             </TouchableOpacity>
           </View>
-          
-          <TouchableOpacity 
-            style={styles.mapPreviewCard}
+
+          <TouchableOpacity
+            style={styles.storeCard}
             onPress={() => router.push('/(tabs)/branches')}
-            activeOpacity={0.9}
+            activeOpacity={0.95}
           >
-            <Image 
+            <Image
               source={{ uri: 'https://oba.az/site/assets/files/3430/keyfiyyetin_yol_xeritesi.png' }}
-              style={styles.mapBg}
-              resizeMode="cover"
+              style={styles.storeMapImage}
             />
             <LinearGradient
-              colors={['transparent', 'rgba(36, 36, 36, 0.6)']}
-              style={StyleSheet.absoluteFill}
+              colors={['transparent', 'rgba(0,0,0,0.7)']}
+              style={styles.storeOverlay}
             />
-     
-            <View style={styles.mapInfoOverlay}>
-              <View>
-                <Text style={styles.locName}>OBA-NERIMANOV 19</Text>
-                <Text style={styles.locDist}>1.94 km məsafədə • 22:00-a qədər açıqdır</Text>
+            <View style={styles.storeContent}>
+              <View style={styles.storeBadge}>
+                <Text style={styles.storeBadgeText}>Açıqdır</Text>
               </View>
-              <View style={styles.goBtn}>
-                <ChevronRight size={20} color={Palette.primary} />
+              <View>
+                <Text style={styles.storeName}>OBA - Nərimanov 19</Text>
+                <Text style={styles.storeAddress}>Aşıq Molla Cümə küç. 19 | 1.9 km</Text>
               </View>
             </View>
           </TouchableOpacity>
         </View>
+
+        <View style={{ height: 40 }} />
       </ScrollView>
+
+      {/* Story Viewer Modal */}
+      <Modal
+        visible={storyModalVisible}
+        transparent={false}
+        animationType="fade"
+        onRequestClose={() => setStoryModalVisible(false)}
+      >
+        <View style={styles.modalContainer}>
+          <SafeAreaView style={styles.modalSafe}>
+            <View style={styles.modalHeader}>
+              <View style={styles.modalUser}>
+                <Image
+                  source={{ uri: selectedStory?.image }}
+                  style={[styles.storyImage, styles.storyAvatarSmall]}
+                />
+                <View>
+                  <Text style={styles.modalUserName}>{selectedStory?.title}</Text>
+                  <Text style={styles.modalTime}>2 saat əvvəl</Text>
+                </View>
+              </View>
+              <TouchableOpacity onPress={() => setStoryModalVisible(false)} style={styles.closeButton}>
+                <X size={28} color="#fff" />
+              </TouchableOpacity>
+            </View>
+
+            <ScrollView
+              horizontal
+              pagingEnabled
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={{ flexGrow: 1 }}
+              onMomentumScrollEnd={(ev) => {
+                const index = Math.round(ev.nativeEvent.contentOffset.x / SCREEN_WIDTH);
+                if (STORIES[index]) setSelectedStory(STORIES[index]);
+              }}
+              contentOffset={{ x: (STORIES.findIndex(s => s.id === selectedStory?.id) || 0) * SCREEN_WIDTH, y: 0 }}
+            >
+              {STORIES.map((story) => (
+                <View key={story.id} style={{ width: SCREEN_WIDTH, flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+                  <Image
+                    source={{ uri: story.image }}
+                    style={styles.fullStoryImage}
+                    resizeMode="contain"
+                  />
+                </View>
+              ))}
+            </ScrollView>
+
+            <View style={styles.modalFooter}>
+              <TouchableOpacity style={styles.seenButton}>
+                <Text style={styles.seenText}>Ətraflı</Text>
+                <Maximize2 size={20} color="#fff" />
+              </TouchableOpacity>
+            </View>
+          </SafeAreaView>
+        </View>
+      </Modal>
+
+      {/* Barcode Modal */}
+      <Modal
+        visible={barcodeModalVisible}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setBarcodeModalVisible(false)}
+      >
+        <Pressable style={styles.modalOverlay} onPress={() => setBarcodeModalVisible(false)}>
+          <Pressable style={styles.barcodeModalContent} onPress={(e) => e.stopPropagation()}>
+            <View style={styles.barcodeHeader}>
+              <Text style={styles.barcodeTitle}>OBA Bonus Kartı</Text>
+            </View>
+            <View style={styles.qrContainer}>
+              <Image
+                source={{ uri: 'https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=OBABONUS' }}
+                style={styles.modalQrCode}
+                resizeMode="contain"
+              />
+              <Text style={styles.qrText}>Skan etmək üçün kassirə göstərin</Text>
+            </View>
+            <Text style={styles.cardNumber}>1000 0000 0010 3737</Text>
+          </Pressable>
+        </Pressable>
+      </Modal>
     </View>
   );
 }
@@ -276,15 +375,20 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: '#F3F4F6', // Light gray background for contrast
+  },
+  scrollContent: {
+    paddingBottom: 40,
   },
   headerContainer: {
+    borderBottomLeftRadius: 32,
+    borderBottomRightRadius: 32,
     overflow: 'hidden',
+    backgroundColor: Palette.primary,
+    ...Shadows.medium,
   },
   headerBg: {
-    paddingBottom: 50,
-    borderBottomLeftRadius: 44,
-    borderBottomRightRadius: 44,
+    paddingBottom: 40,
   },
   headerSafe: {
     paddingTop: Platform.OS === 'ios' ? 0 : 40,
@@ -294,461 +398,478 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 24,
-    marginBottom: 20,
+    marginBottom: 24,
   },
   headerLeft: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 14,
+    gap: 16,
+  },
+  avatarContainer: {
+    position: 'relative',
   },
   avatarWrapper: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
-    backgroundColor: 'rgba(255,255,255,0.15)',
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: 'rgba(255,255,255,0.2)',
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.25)',
+    borderWidth: 1.5,
+    borderColor: 'rgba(255,255,255,0.3)',
+  },
+  onlineBadge: {
+    position: 'absolute',
+    bottom: 2,
+    right: 2,
+    width: 14,
+    height: 14,
+    borderRadius: 7,
+    backgroundColor: Palette.secondary,
+    borderWidth: 2,
+    borderColor: Palette.primary,
   },
   greetingText: {
-    color: 'rgba(255,255,255,0.8)',
-    fontSize: 15,
-    fontWeight: '600',
+    color: 'rgba(255,255,255,0.9)',
+    fontSize: 14,
+    fontWeight: '500',
   },
   nameText: {
     color: '#fff',
-    fontSize: 24,
-    fontWeight: '900',
-    marginTop: -4,
+    fontSize: 22,
+    fontWeight: '800',
+    letterSpacing: 0.5,
   },
   headerRight: {
     flexDirection: 'row',
     gap: 12,
   },
   iconButton: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: 'rgba(255,255,255,0.1)',
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: 'rgba(255,255,255,0.15)',
     alignItems: 'center',
     justifyContent: 'center',
-    position: 'relative',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.1)',
   },
   notifDot: {
     position: 'absolute',
-    top: 14,
-    right: 14,
+    top: 10,
+    right: 10,
     width: 8,
     height: 8,
     borderRadius: 4,
-    backgroundColor: Palette.secondary,
-    borderWidth: 2,
+    backgroundColor: Palette.error,
+    borderWidth: 1.5,
     borderColor: Palette.primary,
   },
   storiesScroll: {
     paddingHorizontal: 24,
-    paddingBottom: 10,
-    gap: 16,
+    paddingBottom: 16,
+    gap: 20,
   },
   storyContainer: {
     alignItems: 'center',
     gap: 8,
+    width: 72,
   },
   storyGlow: {
-    padding: 2.5,
+    width: 72,
+    height: 72,
     borderRadius: 36,
+    padding: 2,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   storyCircle: {
-    width: 66,
-    height: 66,
-    borderRadius: 33,
-    borderWidth: 2,
-    borderColor: Palette.primary,
-    backgroundColor: '#fff',
-    overflow: 'hidden',
+    width: '100%',
+    height: '100%',
+    borderRadius: 36,
+    backgroundColor: Palette.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 3,
   },
   storyImage: {
     width: '100%',
     height: '100%',
+    borderRadius: 32,
+    backgroundColor: '#fff',
   },
   storyTitle: {
     color: '#fff',
-    fontSize: 11,
-    fontWeight: '700',
-    maxWidth: 70,
+    fontSize: 12,
+    fontWeight: '600',
+    textAlign: 'center',
   },
-  scrollContent: {
-    paddingBottom: 120,
-  },
-  cardWrapper: {
+  cardSection: {
+    marginTop: -30,
     paddingHorizontal: 24,
-    marginTop: -40,
     zIndex: 10,
   },
-  loyaltyCard: {
-    backgroundColor: '#fff',
-    borderRadius: 28,
-    padding: 24,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.1,
-    shadowRadius: 16,
-    elevation: 10,
+  cardContainer: {
+    ...Shadows.large,
   },
-  cardMain: {
+  loyaltyCard: {
+    borderRadius: 24,
+    padding: 24,
+    height: 200,
+    justifyContent: 'space-between',
+    overflow: 'hidden',
+  },
+  cardHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
   },
-  cashbackRow: {
+  cardLabel: {
+    fontSize: 14,
+    color: '#666',
+    fontWeight: '600',
+    textTransform: 'uppercase',
+    letterSpacing: 1,
+    marginBottom: 4,
+  },
+  balanceRow: {
     flexDirection: 'row',
     alignItems: 'baseline',
   },
-  cashbackAmount: {
-    fontSize: 48,
-    fontWeight: '900',
-    color: Palette.primary,
-  },
-  cashbackSymbol: {
+  currencySymbol: {
     fontSize: 24,
     fontWeight: '700',
     color: Palette.primary,
+    marginRight: 4,
   },
-  cashbackSub: {
-    fontSize: 14,
-    color: '#999',
-    fontWeight: '600',
-    marginTop: -4,
+  balanceAmount: {
+    fontSize: 40,
+    fontWeight: '900',
+    color: Palette.primary,
+    letterSpacing: -1,
   },
-  brandBadge: {
+  qrCode: {
+    width: 90,
+    height: 90,
+    opacity: 0.8,
+  },
+  cardFooter: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'flex-end',
   },
-  obaTag: {
-    backgroundColor: Palette.primary,
-    paddingHorizontal: 14,
+  cardNumberContainer: {
     paddingVertical: 6,
-    borderRadius: 12,
-    marginBottom: 8,
+    paddingHorizontal: 12,
+    backgroundColor: '#F3F4F6',
+    borderRadius: 8,
   },
-<<<<<<< HEAD
-  obaTagText: {
+  cardNumber: {
+    fontFamily: Platform.select({ ios: 'Courier', android: 'monospace' }),
+    fontWeight: '600',
+    color: '#333',
+    letterSpacing: 1,
+  },
+  cardActionButton: {
+    backgroundColor: Palette.primary,
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 12,
+    ...Shadows.small,
+  },
+  cardActionText: {
     color: Palette.secondary,
     fontWeight: '900',
-=======
-  barcodeHint: {
-    color: '#1e293b',
-    fontSize: 12,
-    fontWeight: '600',
-  },
-  section: {
-    gap: 14
-  },
-  sectionHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: COLORS.textPrimary,
-  },
-  sectionLink: {
-    color: COLORS.accentSecondary,
-    fontWeight: '600',
-    fontSize: 13,
-  },
-  quickGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 12,
-  },
-  flowContainer: {
-    flexDirection: 'row',
-    gap: 12,
-    flexWrap: 'wrap',
-  },
-  flowCard: {
-    flexBasis: '31%',
-    backgroundColor: 'rgba(11, 21, 41, 0.8)',
-    borderRadius: 18,
-    padding: 14,
-    borderWidth: 1,
-    borderColor: 'rgba(148,163,184,0.15)',
-    gap: 8,
-    minWidth: 120,
-  },
-  flowBadge: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    backgroundColor: 'rgba(148,163,184,0.2)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  flowBadgeText: {
-    color: '#fff',
-    fontWeight: '700',
-  },
-  flowTitle: {
-    color: '#fff',
-    fontWeight: '600',
-  },
-  flowDescription: {
-    color: COLORS.textSecondary,
-    fontSize: 12,
-    lineHeight: 16,
-  },
-  quickCard: {
-    flexBasis: (SCREEN_WIDTH - 24 * 2 - 12) / 2,
-    backgroundColor: COLORS.surface,
-    borderRadius: 18,
-    padding: 16,
-    gap: 8,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.2,
-    shadowRadius: 12,
-    elevation: 3,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-  },
-  quickIcon: {
-    height: 40,
-    width: 40,
-    borderRadius: 16,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  quickLabel: {
-    fontWeight: '600',
-    fontSize: 15,
-    color: COLORS.textPrimary,
-  },
-  quickHint: {
-    color: COLORS.textSecondary,
-    fontSize: 13,
-  },
-  promoRow: {
-    gap: 16,
-    paddingVertical: 4,
-  },
-  promoCard: {
-    width: SCREEN_WIDTH * 0.72,
-    height: 170,
-    borderRadius: 24,
-    overflow: 'hidden',
-    backgroundColor: COLORS.surfaceElevated,
-    marginRight: 16,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-  },
-  promoImage: {
-    ...StyleSheet.absoluteFillObject,
-  },
-  promoGradient: {
-    ...StyleSheet.absoluteFillObject,
-  },
-  promoTextBlock: {
-    position: 'absolute',
-    left: 20,
-    right: 20,
-    bottom: 20,
-    gap: 6,
-  },
-  promoAccentDot: {
-    height: 6,
-    width: 40,
-    borderRadius: 999,
-  },
-  promoTitle: {
-    color: COLORS.textPrimary,
-    fontWeight: '700',
->>>>>>> a4cfaf6f68f89d5838284371fa816a4df37a8699
-    fontSize: 20,
+    fontSize: 16,
     fontStyle: 'italic',
   },
-  sloganText: {
-    fontSize: 10,
-    color: Palette.primary,
-    textAlign: 'right',
-    fontWeight: '700',
-    lineHeight: 12,
-  },
-  cardSeparator: {
-    height: 1,
-    backgroundColor: '#f5f5f5',
-    marginVertical: 20,
-  },
-  barcodeSection: {
-    alignItems: 'center',
-  },
-  barcodeGraphics: {
-    flexDirection: 'row',
+  barcodeClickArea: {
     height: 50,
-    alignItems: 'center',
-    marginBottom: 12,
+    justifyContent: 'flex-end',
+    width: '100%',
   },
-  barcodeLine: {
-    height: '100%',
-    backgroundColor: '#1a1a1a',
-    borderRadius: 1,
-  },
-  barcodeNumbers: {
-    fontSize: 16,
-    letterSpacing: 2,
-    fontWeight: '700',
-    color: '#444',
-  },
-  ctaRow: {
+  visualBarcode: {
     flexDirection: 'row',
-    paddingHorizontal: 24,
-    marginTop: 30,
-    gap: 16,
+    alignItems: 'flex-end',
+    justifyContent: 'space-between',
+    height: 40,
+    width: '100%',
+    paddingHorizontal: 10,
   },
-  ctaPrimary: {
+  vBarLine: {
+    borderRadius: 2,
+  },
+  modalContainer: {
     flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    height: 62,
-    borderRadius: 22,
-    gap: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.1,
-    shadowRadius: 12,
-    elevation: 4,
-    overflow: 'hidden',
+    backgroundColor: '#000',
   },
-  ctaPrimaryText: {
-    color: '#fff',
-    fontWeight: '800',
-    fontSize: 16,
+  modalSafe: {
+    flex: 1,
   },
-  quickMenu: {
+  modalHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    paddingHorizontal: 24,
-    marginTop: 40,
-  },
-  menuItem: {
     alignItems: 'center',
-    width: (SCREEN_WIDTH - 48) / 4,
+    padding: 16,
+    zIndex: 10,
+    marginTop: Platform.OS === 'android' ? 40 : 0,
   },
-  menuIconBox: {
-    width: 60,
-    height: 60,
+  modalUser: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  storyAvatarSmall: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: '#fff',
+  },
+  modalUserName: {
+    color: '#fff',
+    fontWeight: '700',
+    fontSize: 14,
+  },
+  modalTime: {
+    color: 'rgba(255,255,255,0.7)',
+    fontSize: 12,
+  },
+  closeButton: {
+    padding: 8,
+  },
+  fullStoryImage: {
+    width: SCREEN_WIDTH,
+    height: '100%',
+  },
+  modalFooter: {
+    padding: 24,
+    alignItems: 'center',
+    position: 'absolute',
+    bottom: 40,
+    width: '100%',
+  },
+  seenButton: {
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 24,
+    paddingVertical: 14,
+    borderRadius: 30,
+    gap: 8,
+    backdropFilter: 'blur(10px)',
+  },
+  seenText: {
+    color: '#fff',
+    fontWeight: '700',
+    fontSize: 16,
+  },
+  cardDecoCircle: {
+    position: 'absolute',
+    bottom: -50,
+    right: -50,
+    width: 150,
+    height: 150,
+    borderRadius: 75,
+    backgroundColor: Palette.lightGreen,
+    opacity: 0.5,
+    zIndex: -1,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 24,
+  },
+  barcodeModalContent: {
+    backgroundColor: '#fff',
+    width: '100%',
+    padding: 24,
+    borderRadius: 32,
+    alignItems: 'center',
+    ...Shadows.large,
+  },
+  barcodeHeader: {
+    marginBottom: 24,
+  },
+  barcodeTitle: {
+    fontSize: 20,
+    fontWeight: '800',
+    color: Palette.primary,
+  },
+  qrContainer: {
+    alignItems: 'center',
+    gap: 16,
+  },
+  modalQrCode: {
+    width: 250,
+    height: 250,
+  },
+  qrText: {
+    color: '#666',
+    fontWeight: '600',
+    marginTop: 12,
+  },
+  actionGrid: {
+    flexDirection: 'row',
+    paddingHorizontal: 24,
+    gap: 16,
+    marginTop: 24,
+  },
+  actionCard: {
+    flex: 1,
+    height: 120,
+    borderRadius: 24,
+    overflow: 'hidden',
+    position: 'relative',
+    ...Shadows.medium,
+  },
+  scanCard: {
+    backgroundColor: Palette.primary,
+  },
+  lensCard: {
+    backgroundColor: Palette.secondary,
+  },
+  actionContent: {
+    padding: 16,
+    height: '100%',
+    justifyContent: 'space-between',
+  },
+  actionIconCircle: {
+    width: 44,
+    height: 44,
     borderRadius: 22,
-    backgroundColor: '#fcfcfc',
+    backgroundColor: 'rgba(255,255,255,0.9)',
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 10,
-    borderWidth: 1,
-    borderColor: '#f0f0f0',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.04,
-    shadowRadius: 8,
-    elevation: 2,
   },
-  menuLabel: {
+  actionTitleLight: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '800',
+  },
+  actionSubtitleLight: {
+    color: 'rgba(255,255,255,0.8)',
     fontSize: 12,
-    textAlign: 'center',
-    color: '#666',
-    fontWeight: '700',
+    fontWeight: '600',
   },
-  mapSection: {
-    marginTop: 40,
+  actionTitleDark: {
+    color: '#713f12', // Darker yellow/brown
+    fontSize: 16,
+    fontWeight: '800',
+  },
+  actionSubtitleDark: {
+    color: '#854d0e',
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  servicesSection: {
     paddingHorizontal: 24,
+    marginTop: 32,
   },
-  sectionTop: {
+  sectionHeader: {
+    fontSize: 18,
+    fontWeight: '800',
+    color: Palette.textPrimary,
+    marginBottom: 16,
+  },
+  servicesGrid: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    backgroundColor: '#fff',
+    padding: 20,
+    borderRadius: 24,
+    ...Shadows.small,
+  },
+  serviceItem: {
+    alignItems: 'center',
+    gap: 8,
+    width: '22%',
+  },
+  serviceIconBox: {
+    width: 52,
+    height: 52,
+    borderRadius: 18,
+    backgroundColor: Palette.lightGreen,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  serviceLabel: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: Palette.textSecondary,
+    textAlign: 'center',
+    lineHeight: 16,
+  },
+  widgetSection: {
+    paddingHorizontal: 24,
+    marginTop: 32,
+  },
+  widgetHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 16,
   },
-  sectionTitle: {
-    fontSize: 20,
-    fontWeight: '900',
-    color: '#1a1a1a',
-  },
-  seeAllText: {
-    fontSize: 14,
+  linkText: {
     color: Palette.primary,
     fontWeight: '700',
+    fontSize: 14,
   },
-  mapPreviewCard: {
-    height: 200,
-    borderRadius: 32,
+  storeCard: {
+    height: 180,
+    borderRadius: 24,
     overflow: 'hidden',
-    backgroundColor: Palette.lightGreen,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.1,
-    shadowRadius: 16,
-    elevation: 6,
+    backgroundColor: '#fff',
+    position: 'relative',
+    ...Shadows.medium,
   },
-  mapBg: {
+  storeMapImage: {
     width: '100%',
     height: '100%',
-    opacity: 0.5,
   },
-  mapMarker: {
-    position: 'absolute',
-    top: '40%',
-    left: '50%',
-    width: 20,
-    height: 20,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  markerCircle: {
-    width: 12,
-    height: 12,
-    borderRadius: 6,
-    backgroundColor: Palette.primary,
-    borderWidth: 2,
-    borderColor: '#fff',
-    zIndex: 2,
-  },
-  markerPulse: {
-    position: 'absolute',
-    width: 30,
-    height: 30,
-    borderRadius: 15,
-    backgroundColor: Palette.primary,
-    opacity: 0.3,
-  },
-  mapInfoOverlay: {
+  storeOverlay: {
     position: 'absolute',
     bottom: 0,
     left: 0,
     right: 0,
-    backgroundColor: '#fff',
-    padding: 16,
+    height: '60%',
+  },
+  storeContent: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    padding: 20,
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
+    alignItems: 'flex-end',
   },
-  locName: {
-    fontSize: 16,
-    fontWeight: '800',
-    color: '#1a1a1a',
+  storeBadge: {
+    position: 'absolute',
+    top: -100, // Relative to content bottom, so this moves it up to top right of card
+    right: 0,
+    backgroundColor: '#fff',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
+    ...Shadows.small,
   },
-  locDist: {
+  storeBadgeText: {
+    color: Palette.success,
     fontSize: 12,
-    color: '#999',
-    fontWeight: '600',
-    marginTop: 2,
+    fontWeight: '800',
   },
-  goBtn: {
-    width: 36,
-    height: 36,
-    borderRadius: 12,
-    backgroundColor: Palette.lightGreen,
-    alignItems: 'center',
-    justifyContent: 'center',
+  storeName: {
+    color: '#fff',
+    fontSize: 18,
+    fontWeight: '800',
+    marginBottom: 4,
+  },
+  storeAddress: {
+    color: 'rgba(255,255,255,0.8)',
+    fontSize: 12,
+    fontWeight: '500',
   },
 });

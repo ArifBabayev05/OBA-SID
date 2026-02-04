@@ -1,23 +1,23 @@
-import React, { useEffect, useState } from 'react';
-import {
-  View,
-  Text,
-  ScrollView,
-  StyleSheet,
-  Dimensions,
-  TouchableOpacity,
-  StatusBar,
-  SafeAreaView,
-  Platform
-} from 'react-native';
-import { LineChart, PieChart } from 'react-native-chart-kit';
-import { ArrowLeft, TrendingUp, TrendingDown, Minus, Sparkles, BrainCircuit } from 'lucide-react-native';
-import { router } from 'expo-router';
+import { Palette, Shadows } from '@/constants/theme';
+import { AISummary, generateAISummary, getLatestAISummary } from '@/services/aiAdvisor';
 import { getDatasetEntries } from '@/services/datasetService';
 import { buildInsights, InsightsResult } from '@/services/insightsService';
-import { generateAISummary, getLatestAISummary, AISummary } from '@/services/aiAdvisor';
-import { Palette } from '@/constants/theme';
 import { LinearGradient } from 'expo-linear-gradient';
+import { router } from 'expo-router';
+import { ArrowLeft, BrainCircuit, Minus, Sparkles, TrendingDown, TrendingUp } from 'lucide-react-native';
+import React, { useEffect, useState } from 'react';
+import {
+  Dimensions,
+  Platform,
+  SafeAreaView,
+  ScrollView,
+  StatusBar,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View
+} from 'react-native';
+import { LineChart, PieChart } from 'react-native-chart-kit';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const CHART_WIDTH = SCREEN_WIDTH - 40;
@@ -66,7 +66,7 @@ export default function InsightsScreen() {
     activeTab === 'week' ? `H${index + 1}` : new Date(item.date).toLocaleDateString('az-AZ', { month: 'short' })
   );
   const chartValues = chartData.map(item => Number(item.amount.toFixed(2)));
-  
+
   const lineChartData = {
     labels: chartLabels,
     datasets: [{
@@ -108,10 +108,10 @@ export default function InsightsScreen() {
   return (
     <View style={styles.container}>
       <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
-      
+
       <View style={styles.headerContainer}>
         <LinearGradient
-          colors={[Palette.primary, '#004d23']}
+          colors={[Palette.primaryDark, Palette.primary]}
           style={styles.headerGradient}
         >
           <SafeAreaView>
@@ -224,7 +224,7 @@ export default function InsightsScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F9FAFB',
+    backgroundColor: '#F3F4F6',
   },
   loadingContainer: {
     flex: 1,
@@ -232,18 +232,21 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   loadingText: {
-    color: '#666',
+    color: '#64748B',
     fontSize: 16,
     fontWeight: '600',
+    marginTop: 16,
   },
   headerContainer: {
     overflow: 'hidden',
     paddingBottom: 20,
+    backgroundColor: Palette.primary,
+    borderBottomLeftRadius: 32,
+    borderBottomRightRadius: 32,
+    ...Shadows.medium,
   },
   headerGradient: {
     paddingBottom: 24,
-    borderBottomLeftRadius: 32,
-    borderBottomRightRadius: 32,
   },
   headerContent: {
     flexDirection: 'row',
@@ -256,29 +259,33 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: 'rgba(255, 255, 255, 0.15)',
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
     alignItems: 'center',
     justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
   },
   headerTitle: {
     color: 'white',
     fontSize: 20,
-    fontWeight: '900',
+    fontWeight: '800',
+    letterSpacing: 0.5,
   },
   scrollView: {
     flex: 1,
   },
   content: {
     padding: 20,
-    gap: 20,
+    gap: 24,
     paddingBottom: 120,
   },
   aiCard: {
-    borderRadius: 28,
+    borderRadius: 24,
     overflow: 'hidden',
     borderWidth: 1,
-    borderColor: '#e2e8f0',
+    borderColor: '#E2E8F0',
     backgroundColor: '#fff',
+    ...Shadows.glow,
   },
   aiGradient: {
     padding: 24,
@@ -286,47 +293,45 @@ const styles = StyleSheet.create({
   aiHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
-    marginBottom: 12,
+    gap: 12,
+    marginBottom: 16,
   },
   aiTitle: {
     fontSize: 14,
     fontWeight: '800',
     color: Palette.primary,
     textTransform: 'uppercase',
-    letterSpacing: 1,
+    letterSpacing: 1.5,
   },
   aiHeadline: {
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: '800',
-    color: '#1a1a1a',
-    marginBottom: 16,
+    color: '#1E293B',
+    marginBottom: 20,
+    lineHeight: 28,
   },
   aiRecs: {
-    gap: 10,
+    gap: 12,
   },
   aiRecRow: {
     flexDirection: 'row',
     gap: 12,
+    alignItems: 'flex-start',
   },
   aiRecText: {
     flex: 1,
-    color: '#666',
-    fontSize: 14,
-    lineHeight: 20,
+    color: '#475569',
+    fontSize: 15,
+    lineHeight: 22,
     fontWeight: '500',
   },
   card: {
     backgroundColor: '#fff',
     borderRadius: 28,
-    padding: 20,
+    padding: 24,
     borderWidth: 1,
     borderColor: '#f0f0f0',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.02,
-    shadowRadius: 12,
-    elevation: 2,
+    ...Shadows.medium,
   },
   cardHeader: {
     flexDirection: 'row',
@@ -338,27 +343,30 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: '800',
     color: '#1a1a1a',
+    marginBottom: 16,
   },
   trendBadge: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    backgroundColor: '#f8fafc',
+    backgroundColor: '#F8FAFC',
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
   },
   trendText: {
     fontSize: 13,
     fontWeight: '700',
-    color: '#666',
+    color: '#64748B',
   },
   tabBar: {
     flexDirection: 'row',
-    backgroundColor: '#f1f5f9',
-    borderRadius: 14,
+    backgroundColor: '#F1F5F9',
+    borderRadius: 16,
     padding: 4,
-    marginBottom: 20,
+    marginBottom: 24,
   },
   tab: {
     flex: 1,
@@ -368,11 +376,7 @@ const styles = StyleSheet.create({
   },
   tabActive: {
     backgroundColor: '#fff',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 2,
+    ...Shadows.small,
   },
   tabText: {
     fontSize: 14,
@@ -386,6 +390,8 @@ const styles = StyleSheet.create({
   chart: {
     marginVertical: 8,
     borderRadius: 16,
+    marginRight: 0,
+    paddingRight: 0,
   },
   pieContainer: {
     alignItems: 'center',
@@ -402,17 +408,21 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#f0f0f0',
     alignItems: 'center',
+    justifyContent: 'center',
+    ...Shadows.small,
   },
   statLabel: {
     fontSize: 12,
     fontWeight: '700',
-    color: '#999',
+    color: '#94A3B8',
     textAlign: 'center',
     marginBottom: 8,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
   },
   statValue: {
-    fontSize: 22,
+    fontSize: 20,
     fontWeight: '900',
-    color: '#1a1a1a',
+    color: '#0F172A',
   },
 });

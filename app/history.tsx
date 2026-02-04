@@ -1,24 +1,24 @@
-import React, { useEffect, useMemo, useState } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  ScrollView,
-  FlatList,
-  Linking,
-  Alert,
-  StatusBar,
-  SafeAreaView,
-  Platform
-} from 'react-native';
-import { useRouter } from 'expo-router';
-import { ArrowLeft, RefreshCw, Sparkles, FileText, ShoppingBag, ExternalLink, CreditCard, Banknote } from 'lucide-react-native';
+import { Palette, Shadows } from '@/constants/theme';
+import { AISummary, getLatestAISummary } from '@/services/aiAdvisor';
 import { DatasetEntry, getDatasetEntries } from '@/services/datasetService';
 import { buildInsights, InsightsResult } from '@/services/insightsService';
-import { AISummary, getLatestAISummary } from '@/services/aiAdvisor';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Palette } from '@/constants/theme';
+import { useRouter } from 'expo-router';
+import { ArrowLeft, Banknote, CreditCard, ExternalLink, FileText, RefreshCw, ShoppingBag, Sparkles } from 'lucide-react-native';
+import React, { useEffect, useMemo, useState } from 'react';
+import {
+  Alert,
+  FlatList,
+  Linking,
+  Platform,
+  SafeAreaView,
+  ScrollView,
+  StatusBar,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View
+} from 'react-native';
 
 const IGNORED_ITEMS = [
   'cash', 'cashless', 'bonus', 'prepayment', 'credit', 'nağd', 'nağdsız',
@@ -66,7 +66,7 @@ export default function HistoryScreen() {
   }, [entries, timeFilter]);
 
   const renderEntry = ({ item, index }: { item: DatasetEntry; index: number }) => {
-    const filteredItems = item.items.filter(p => 
+    const filteredItems = item.items.filter(p =>
       !IGNORED_ITEMS.some(ignored => p.name.toLowerCase().includes(ignored))
     );
 
@@ -89,68 +89,68 @@ export default function HistoryScreen() {
     const date = new Date(item.createdAt);
 
     return (
-    <View style={styles.timelineRow}>
-      <View style={styles.timelineIndicator}>
-        <View style={styles.timelineDot} />
-        {!isLast && <View style={styles.timelineLine} />}
-      </View>
-      <View style={styles.receiptCard}>
-        <View style={styles.receiptHeader}>
-          <View style={styles.receiptHeaderLeft}>
-            <View style={styles.storeIconBg}>
-              <ShoppingBag size={16} color={Palette.primary} />
+      <View style={styles.timelineRow}>
+        <View style={styles.timelineIndicator}>
+          <View style={styles.timelineDot} />
+          {!isLast && <View style={styles.timelineLine} />}
+        </View>
+        <View style={styles.receiptCard}>
+          <View style={styles.receiptHeader}>
+            <View style={styles.receiptHeaderLeft}>
+              <View style={styles.storeIconBg}>
+                <ShoppingBag size={16} color={Palette.primary} />
+              </View>
+              <View style={styles.storeInfoColumn}>
+                <Text style={styles.storeName} numberOfLines={1}>{item.storeName || 'OBA Market'}</Text>
+                <Text style={styles.receiptDate}>{date.toLocaleString('az-AZ')}</Text>
+              </View>
             </View>
-            <View style={styles.storeInfoColumn}>
-              <Text style={styles.storeName} numberOfLines={1}>{item.storeName || 'OBA Market'}</Text>
-              <Text style={styles.receiptDate}>{date.toLocaleString('az-AZ')}</Text>
-            </View>
+            <Text style={styles.totalText}>{item.totalAmount.toFixed(2)}₼</Text>
           </View>
-          <Text style={styles.totalText}>{item.totalAmount.toFixed(2)}₼</Text>
-        </View>
-        
-        <View style={styles.itemsList}>
-          {filteredItems.map((product, idx) => (
-            <View key={`${item.id}-${idx}`} style={styles.itemRow}>
-              <Text style={styles.itemName} numberOfLines={1}>{product.name}</Text>
-              <Text style={styles.itemPrice}>{product.price?.toFixed(2) ?? '0.00'}₼</Text>
-            </View>
-          ))}
-          {filteredItems.length === 0 && (
-             <Text style={styles.noItemsText}>Məhsul siyahısı yoxdur</Text>
-          )}
-        </View>
 
-        <View style={styles.receiptFooter}>
-          <View style={styles.paymentInfo}>
-            {isCashless ? (
-               <>
-                 <CreditCard size={14} color="#94a3b8" />
-                 <Text style={styles.paymentText}>Nağdsız</Text>
-               </>
-            ) : (
-               <>
-                 <Banknote size={14} color="#94a3b8" />
-                 <Text style={styles.paymentText}>Nağd</Text>
-               </>
+          <View style={styles.itemsList}>
+            {filteredItems.map((product, idx) => (
+              <View key={`${item.id}-${idx}`} style={styles.itemRow}>
+                <Text style={styles.itemName} numberOfLines={1}>{product.name}</Text>
+                <Text style={styles.itemPrice}>{product.price?.toFixed(2) ?? '0.00'}₼</Text>
+              </View>
+            ))}
+            {filteredItems.length === 0 && (
+              <Text style={styles.noItemsText}>Məhsul siyahısı yoxdur</Text>
             )}
           </View>
-          <TouchableOpacity style={styles.viewReceiptLink} onPress={handleOpenReceipt}>
-            <Text style={styles.viewReceiptText}>Elektron qəbz</Text>
-            <ExternalLink size={12} color="#60a5fa" />
-          </TouchableOpacity>
+
+          <View style={styles.receiptFooter}>
+            <View style={styles.paymentInfo}>
+              {isCashless ? (
+                <>
+                  <CreditCard size={14} color="#94a3b8" />
+                  <Text style={styles.paymentText}>Nağdsız</Text>
+                </>
+              ) : (
+                <>
+                  <Banknote size={14} color="#94a3b8" />
+                  <Text style={styles.paymentText}>Nağd</Text>
+                </>
+              )}
+            </View>
+            <TouchableOpacity style={styles.viewReceiptLink} onPress={handleOpenReceipt}>
+              <Text style={styles.viewReceiptText}>Elektron qəbz</Text>
+              <ExternalLink size={12} color="#60a5fa" />
+            </TouchableOpacity>
+          </View>
         </View>
       </View>
-    </View>
     );
   };
 
   return (
     <View style={styles.container}>
       <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
-      
+
       <View style={styles.headerContainer}>
         <LinearGradient
-          colors={[Palette.primary, '#004d23']}
+          colors={[Palette.primaryDark, Palette.primary]}
           style={styles.headerGradient}
         >
           <SafeAreaView>
@@ -190,29 +190,29 @@ export default function HistoryScreen() {
       </View>
 
       <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
-          <View style={styles.section}>
-            <View style={styles.sectionHeader}>
-              <View style={styles.sectionTitleRow}>
-                <Sparkles size={18} color={Palette.primary} />
-                <Text style={styles.sectionTitle}>Süni İntellekt Analizi</Text>
-              </View>
-              <Text style={styles.sectionSubtitle}>
-                Fərdiləşdirilmiş qənaət məsləhətləri
-              </Text>
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <View style={styles.sectionTitleRow}>
+              <Sparkles size={18} color={Palette.primary} />
+              <Text style={styles.sectionTitle}>Süni İntellekt Analizi</Text>
             </View>
-            {!aiSummary ? (
-              <Text style={styles.emptyText}>Məlumatları görmək üçün qəbz skan edin.</Text>
-            ) : (
-              <View style={styles.insightCard}>
-                <Text style={styles.insightHeadline}>{aiSummary.headline}</Text>
-                {aiSummary.recommendations.map((rec, idx) => (
-                  <Text key={`rec-${idx}`} style={styles.insightBody}>
-                    • {rec.replace(/^[-•\s]+/, '')}
-                  </Text>
-                ))}
-              </View>
-            )}
+            <Text style={styles.sectionSubtitle}>
+              Fərdiləşdirilmiş qənaət məsləhətləri
+            </Text>
           </View>
+          {!aiSummary ? (
+            <Text style={styles.emptyText}>Məlumatları görmək üçün qəbz skan edin.</Text>
+          ) : (
+            <View style={styles.insightCard}>
+              <Text style={styles.insightHeadline}>{aiSummary.headline}</Text>
+              {aiSummary.recommendations.map((rec, idx) => (
+                <Text key={`rec-${idx}`} style={styles.insightBody}>
+                  • {rec.replace(/^[-•\s]+/, '')}
+                </Text>
+              ))}
+            </View>
+          )}
+        </View>
 
         {insights && (
           <>
@@ -265,16 +265,18 @@ export default function HistoryScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F9FAFB',
+    backgroundColor: '#F3F4F6',
   },
   headerContainer: {
     overflow: 'hidden',
     paddingBottom: 20,
+    backgroundColor: Palette.primary,
+    borderBottomLeftRadius: 32,
+    borderBottomRightRadius: 32,
+    ...Shadows.medium,
   },
   headerGradient: {
     paddingBottom: 24,
-    borderBottomLeftRadius: 32,
-    borderBottomRightRadius: 32,
   },
   headerContent: {
     flexDirection: 'row',
@@ -287,48 +289,57 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: 'rgba(255, 255, 255, 0.15)',
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
     alignItems: 'center',
     justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
   },
   headerTitle: {
     color: 'white',
     fontSize: 20,
-    fontWeight: '900',
+    fontWeight: '800',
+    letterSpacing: 0.5,
   },
   refreshButton: {
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: 'rgba(255, 255, 255, 0.15)',
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
     alignItems: 'center',
     justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
   },
   filterChipsRow: {
     flexDirection: 'row',
     gap: 12,
     paddingHorizontal: 20,
-    marginBottom: 20,
+    marginBottom: 24,
+    marginTop: 4,
   },
   filterChip: {
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: 16,
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderRadius: 20,
     backgroundColor: '#fff',
     borderWidth: 1,
-    borderColor: '#eee',
+    borderColor: 'rgba(0,0,0,0.05)',
+    ...Shadows.small,
   },
   filterChipActive: {
     backgroundColor: Palette.primary,
     borderColor: Palette.primary,
+    ...Shadows.medium,
   },
   filterChipText: {
     color: '#666',
     fontSize: 14,
-    fontWeight: '700',
+    fontWeight: '600',
   },
   filterChipTextActive: {
     color: '#fff',
+    fontWeight: '700',
   },
   scroll: {
     flex: 1,
@@ -339,25 +350,19 @@ const styles = StyleSheet.create({
   },
   section: {
     backgroundColor: '#fff',
-    borderRadius: 24,
-    padding: 20,
-    marginBottom: 20,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.03,
-    shadowRadius: 12,
-    elevation: 2,
-    borderWidth: 1,
-    borderColor: '#f0f0f0',
+    borderRadius: 28,
+    padding: 24,
+    marginBottom: 24,
+    ...Shadows.medium,
   },
   sectionHeader: {
-    marginBottom: 16,
+    marginBottom: 20,
   },
   sectionTitleRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
-    marginBottom: 4,
+    marginBottom: 6,
   },
   sectionTitle: {
     color: '#1a1a1a',
@@ -365,70 +370,74 @@ const styles = StyleSheet.create({
     fontWeight: '800',
   },
   sectionSubtitle: {
-    color: '#999',
+    color: '#94a3b8',
     fontSize: 13,
-    fontWeight: '500',
+    fontWeight: '600',
   },
   insightCard: {
-    backgroundColor: '#f8fafc',
+    backgroundColor: '#F0FDF4',
     borderRadius: 20,
-    padding: 16,
+    padding: 20,
     borderWidth: 1,
-    borderColor: '#f1f5f9',
+    borderColor: '#DCFCE7',
   },
   insightHeadline: {
     color: Palette.primary,
     fontWeight: '800',
-    marginBottom: 8,
+    marginBottom: 12,
     fontSize: 16,
+    lineHeight: 24,
   },
   insightBody: {
-    color: '#475569',
+    color: '#334155',
     fontSize: 14,
     lineHeight: 22,
     fontWeight: '500',
+    marginBottom: 4,
   },
   receiptCard: {
     backgroundColor: '#fff',
-    borderRadius: 22,
+    borderRadius: 24,
     flex: 1,
-    padding: 18,
+    padding: 20,
     borderWidth: 1,
-    borderColor: '#f1f5f9',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.02,
-    shadowRadius: 8,
-    elevation: 1,
+    borderColor: '#f0f0f0',
+    ...Shadows.small,
   },
   timelineRow: {
     flexDirection: 'row',
-    gap: 12,
+    gap: 16,
+    marginBottom: 4,
   },
   timelineIndicator: {
     alignItems: 'center',
-    paddingTop: 8,
+    paddingTop: 10,
+    width: 20,
   },
   timelineDot: {
-    width: 12,
-    height: 12,
-    borderRadius: 6,
-    backgroundColor: Palette.primary,
-    borderWidth: 3,
-    borderColor: '#fff',
-    elevation: 2,
+    width: 14,
+    height: 14,
+    borderRadius: 7,
+    backgroundColor: '#fff',
+    borderWidth: 4,
+    borderColor: Palette.primary,
+    ...Shadows.small,
   },
   timelineLine: {
     width: 2,
     flex: 1,
-    backgroundColor: '#e2e8f0',
-    marginTop: 4,
+    backgroundColor: '#E2E8F0',
+    marginTop: 6,
+    borderRadius: 1,
   },
   receiptHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 16,
+    paddingBottom: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F1F5F9',
   },
   receiptHeaderLeft: {
     flexDirection: 'row',
@@ -440,23 +449,23 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   storeIconBg: {
-    height: 40,
-    width: 40,
-    borderRadius: 12,
-    backgroundColor: '#f0fdf4',
+    height: 44,
+    width: 44,
+    borderRadius: 14,
+    backgroundColor: '#F0FDF4',
     alignItems: 'center',
     justifyContent: 'center',
   },
   storeName: {
-    color: '#1e293b',
+    color: '#0F172A',
     fontWeight: '800',
     fontSize: 16,
   },
   receiptDate: {
-    color: '#94a3b8',
+    color: '#64748B',
     fontSize: 12,
     marginTop: 2,
-    fontWeight: '500',
+    fontWeight: '600',
   },
   totalText: {
     color: Palette.primary,
@@ -464,41 +473,47 @@ const styles = StyleSheet.create({
     fontSize: 18,
   },
   itemsList: {
-    gap: 8,
-    paddingVertical: 12,
-    borderTopWidth: 1,
-    borderTopColor: '#f8fafc',
-    borderBottomWidth: 1,
-    borderBottomColor: '#f8fafc',
-    marginBottom: 12,
+    gap: 12,
+    marginBottom: 16,
   },
   itemRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
+    alignItems: 'center',
   },
   itemName: {
     color: '#475569',
     flex: 1,
-    marginRight: 12,
+    marginRight: 16,
     fontSize: 14,
-    fontWeight: '500',
+    fontWeight: '600',
   },
   itemPrice: {
-    color: '#64748b',
+    color: '#0F172A',
     fontWeight: '700',
     fontSize: 14,
   },
   noItemsText: {
-     color: '#94a3b8',
-     fontSize: 13,
-     fontStyle: 'italic',
-     textAlign: 'center',
-     paddingVertical: 8,
+    color: '#94a3b8',
+    fontSize: 13,
+    fontStyle: 'italic',
+    textAlign: 'center',
+    paddingVertical: 8,
   },
   receiptFooter: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    backgroundColor: '#F8FAFC',
+    marginHorizontal: -20,
+    marginBottom: -20,
+    marginTop: 8,
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderBottomLeftRadius: 24,
+    borderBottomRightRadius: 24,
+    borderTopWidth: 1,
+    borderTopColor: '#F1F5F9',
   },
   paymentInfo: {
     flexDirection: 'row',
@@ -506,7 +521,7 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   paymentText: {
-    color: '#94a3b8',
+    color: '#64748B',
     fontSize: 13,
     fontWeight: '600',
   },
@@ -514,35 +529,44 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
+    backgroundColor: '#EFF6FF',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 12,
   },
   viewReceiptText: {
-    color: '#60a5fa',
-    fontSize: 13,
+    color: '#3B82F6',
+    fontSize: 12,
     fontWeight: '700',
   },
   topProductRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    paddingVertical: 10,
+    alignItems: 'center',
+    paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: '#f8fafc',
+    borderBottomColor: '#F1F5F9',
   },
   topProductName: {
     color: '#1e293b',
-    fontWeight: '600',
+    fontWeight: '700',
     fontSize: 15,
     flex: 1,
-    marginRight: 10,
+    marginRight: 12,
   },
   topProductMeta: {
     color: '#64748b',
     fontSize: 13,
     fontWeight: '600',
+    backgroundColor: '#F1F5F9',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 8,
   },
   emptyState: {
     alignItems: 'center',
     paddingVertical: 60,
-    gap: 12,
+    gap: 16,
   },
   emptyText: {
     color: '#64748b',
@@ -555,5 +579,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     textAlign: 'center',
     fontWeight: '500',
+    maxWidth: 240,
   },
 });

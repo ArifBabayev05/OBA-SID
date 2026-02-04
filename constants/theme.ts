@@ -7,36 +7,61 @@ import { Platform } from 'react-native';
 
 export const Palette = {
   primary: '#006738',
-  secondary: '#FDD000',
-  background: '#F7F7F7',
+  primaryDark: '#004d23',
+  primaryLight: '#00854d',
+  secondary: '#FFD700', // Gold/Yellow
+  background: '#F8F9FA',
   surface: '#FFFFFF',
   card: '#FFFFFF',
-  border: '#E5E5E5',
-  textPrimary: '#000000',
-  textSecondary: '#666666',
+  border: '#E2E8F0',
+  textPrimary: '#111827',
+  textSecondary: '#6B7280',
+  textTertiary: '#9CA3AF',
   accent: '#006738',
-  success: '#006738',
+  success: '#10B981',
   info: '#3B82F6',
   warning: '#F59E0B',
   error: '#EF4444',
+
+  // Premium touches
+  glass: 'rgba(255, 255, 255, 0.8)',
+  glassDark: 'rgba(0, 0, 0, 0.6)',
+  gold: '#D4AF37',
+  goldLight: '#F3E5AB',
+
+  // Brand specific
   lightGreen: '#E6F4EA',
   lightYellow: '#FFF9E6',
 };
 
 export const Shadows = {
-  medium: {
+  small: {
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  soft: {
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 1,
+    shadowRadius: 3,
+    elevation: 2,
+  },
+  medium: {
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  large: {
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.15,
+    shadowRadius: 20,
+    elevation: 10,
+  },
+  glow: {
+    shadowColor: '#006738',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.25,
+    shadowRadius: 16,
+    elevation: 8,
   },
 };
 

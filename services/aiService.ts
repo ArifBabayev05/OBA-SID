@@ -1,30 +1,15 @@
-import * as FileSystem from 'expo-file-system/legacy';
 import { FEATURED_PRODUCTS, RECOMMENDED_PRODUCTS } from '@/data/mockData';
+import * as FileSystem from 'expo-file-system/legacy';
 
 const API_KEY = process.env.EXPO_PUBLIC_GEMINI_API_KEY;
 // Using gemini-1.5-flash because it supports vision and is fast
 const GEMINI_URL = `https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash:generateContent?key=${API_KEY}`;
 
+// Mock location metadata
 const STORE_META: Record<
   string,
   { distanceKm: number; address: string; eta: string }
-> = {
-  'Bravo': { distanceKm: 0.4, address: '28 May filialı', eta: '5 dəq' },
-  'Araz Market': { distanceKm: 0.6, address: 'Nizami küçəsi', eta: '7 dəq' },
-  'Bazarstore': { distanceKm: 1.1, address: 'Port Baku', eta: '12 dəq' },
-  'Rahat Market': { distanceKm: 0.9, address: '28 May metrosu', eta: '10 dəq' },
-  'Neptun': { distanceKm: 1.8, address: 'Gənclik mall', eta: '16 dəq' },
-  'CityMart': { distanceKm: 1.2, address: 'Neftçilər pr.14', eta: '13 dəq' },
-  'BirMarket': { distanceKm: 2.4, address: 'Əhmədli filialı', eta: '18 dəq' },
-  // Electronics / tech stores
-  'Kontakt Home': { distanceKm: 1.5, address: '28 Mall', eta: '14 dəq' },
-  'Baku Electronics': { distanceKm: 1.1, address: 'Zabitlər parkı', eta: '11 dəq' },
-  'Maxi.az': { distanceKm: 2.1, address: 'Sahil filialı', eta: '18 dəq' },
-  'IRSHAD': { distanceKm: 0.8, address: 'Təbriz küçəsi', eta: '9 dəq' },
-};
-
-const GROCERY_STORES = ['Bravo', 'Araz Market', 'Bazarstore', 'Rahat Market', 'Neptun', 'CityMart'];
-const ELECTRONIC_STORES = ['Kontakt Home', 'Baku Electronics', 'Maxi.az', 'IRSHAD'];
+> = {};
 
 const randomMeta = () => {
   const distance = +(0.5 + Math.random() * 2.5).toFixed(1);
@@ -38,7 +23,6 @@ const randomMeta = () => {
 type CategoryConfig = {
   id: string;
   keywords: string[];
-  stores: string[];
   basePrice: number;
   variance: number;
   image: string;
@@ -48,7 +32,6 @@ const CATEGORY_CONFIGS: CategoryConfig[] = [
   {
     id: 'electronics',
     keywords: ['elektron', 'qulaq', 'telefon', 'noutbuk', 'powerbank', 'speaker', 'mouse'],
-    stores: ELECTRONIC_STORES,
     basePrice: 80,
     variance: 220,
     image: 'https://images.unsplash.com/photo-1517336714731-489689fd1ca8?auto=format&fit=crop&w=600&q=80',
@@ -56,7 +39,6 @@ const CATEGORY_CONFIGS: CategoryConfig[] = [
   {
     id: 'grocery',
     keywords: ['meyvə', 'tərəvəz', 'süd', 'çörək', 'ərzaq', 'pendir', 'ət', 'yumurta', 'şirə'],
-    stores: GROCERY_STORES,
     basePrice: 2,
     variance: 8,
     image: 'https://images.unsplash.com/photo-1466978913421-dad2ebd01d17?auto=format&fit=crop&w=600&q=80',
@@ -64,7 +46,6 @@ const CATEGORY_CONFIGS: CategoryConfig[] = [
   {
     id: 'beverage',
     keywords: ['içki', 'şirə', 'cola', 'su', 'çay', 'qəhvə'],
-    stores: GROCERY_STORES,
     basePrice: 1.5,
     variance: 5,
     image: 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=600&q=80',
@@ -72,7 +53,6 @@ const CATEGORY_CONFIGS: CategoryConfig[] = [
   {
     id: 'household',
     keywords: ['gigiyena', 'təmizlik', 'şampun', 'sabun', 'məişət', 'detergent'],
-    stores: ['Bravo', 'Araz Market', 'Bazarstore', 'CityMart'],
     basePrice: 3,
     variance: 12,
     image: 'https://images.unsplash.com/photo-1527515637462-cff94eecc1ac?auto=format&fit=crop&w=600&q=80',
@@ -80,7 +60,6 @@ const CATEGORY_CONFIGS: CategoryConfig[] = [
   {
     id: 'default',
     keywords: [],
-    stores: GROCERY_STORES,
     basePrice: 4,
     variance: 15,
     image: 'https://images.unsplash.com/photo-1506619216599-9d16d0903dfd?auto=format&fit=crop&w=600&q=80',
@@ -95,20 +74,6 @@ const getCategoryConfig = (normalizedName: string, normalizedCategory: string): 
     ) ?? CATEGORY_CONFIGS.find(cfg => cfg.id === 'default')!
   );
 };
-
-const createMockMatch = (
-  store: string,
-  detectedName: string,
-  detectedCategory: string,
-  config: CategoryConfig
-) => ({
-  id: `${store}-${detectedName}-${Math.random().toString(36).slice(2, 6)}`.toLowerCase(),
-  name: detectedName,
-  category: detectedCategory,
-  store,
-  price: +(config.basePrice + Math.random() * config.variance).toFixed(2),
-  image: config.image,
-});
 
 export interface ProductMatch {
   store: string;
@@ -128,6 +93,7 @@ export interface ProductAnalysis {
   matches: ProductMatch[];
   bestPrice?: ProductMatch;
   closestStore?: ProductMatch;
+  foundInStore: boolean;
 }
 
 export const identifyProductFromImage = async (imageUri: string): Promise<ProductAnalysis | null> => {
@@ -147,13 +113,13 @@ export const identifyProductFromImage = async (imageUri: string): Promise<Produc
     const prompt = `
 Sən market məhsullarını tanıyan vizual köməkçisən.
 Şəkli analiz et və əsas məhsulu tap. Əgər şəkil məhsul deyilsə (selfi, otaq, maşın və s.)
-onda \"isProduct\" = false yaz.
+onda "isProduct" = false yaz.
 
 Qəti şəkildə YALNIZ bu JSON formatında cavab ver və başqa heç nə yazma:
 {
   "isProduct": true | false,
-  "name": "Məhsulun Azərbaycan dilində ümumi adı (məs: 'Alma', 'Süd', 'Çörək')",
-  "category": "Məhsul kateqoriyası (məs: 'Meyvə və tərəvəz')",
+  "name": "Məhsulun Azərbaycan dilində ümumi adı (məs: 'Alma', 'Süd', 'Çörək', 'Qolbaq')",
+  "category": "Məhsul kateqoriyası (məs: 'Meyvə və tərəvəz', 'Aksessuar')",
   "confidence": 0-1 arası ədədi ehtimal (0.93 kimi)
 }
 Markdown, şərh və ya mətn əlavə ETMƏ.
@@ -173,12 +139,12 @@ Markdown, şərh və ya mətn əlavə ETMƏ.
     });
 
     const data = await response.json();
-    console.log('Gemini response', JSON.stringify(data, null, 2));
+    // console.log('Gemini response', JSON.stringify(data, null, 2));
     const candidate = data?.candidates?.[0];
     const parts = candidate?.content?.parts ?? [];
     const textPart = parts.find((part: any) => typeof part.text === 'string' && part.text.trim().length > 0);
     const text = textPart?.text?.trim();
-    
+
     if (!text) {
       console.warn('No text returned from Gemini', {
         finishReason: candidate?.finishReason,
@@ -196,66 +162,51 @@ Markdown, şərh və ya mətn əlavə ETMƏ.
       console.warn('Failed to parse JSON from AI:', text);
       return null;
     }
-    
+
     const isProduct = result?.isProduct !== false;
     if (!isProduct) {
-      //const err: any = new Error('Product not detected');
-      //err.code = 'NO_PRODUCT';
-      //throw err;
       return null;
     }
 
     const confidence = typeof result?.confidence === 'number'
       ? result.confidence
       : 0.65;
-    if (confidence < 0.3) {
-      const err: any = new Error('Low confidence product detection');
-      err.code = 'NO_PRODUCT';
-      throw err;
+
+    // Lower threshold slightly to be more permissive, but keep it reasonable
+    if (confidence < 0.25) {
+      return null;
     }
 
-    // Find matches in mock database (Fuzzy search logic)
-    // We look for products that contain the detected name or belong to the same category
-    const normalizedName = result.name?.toLowerCase() ?? '';
-    const normalizedCategory = result.category?.toLowerCase() ?? '';
-    const categoryConfig = getCategoryConfig(normalizedName, normalizedCategory);
-    const isElectronics = categoryConfig.id === 'electronics';
+    // Find matches in mock database (Oba Market products only)
+    const allProducts = [...FEATURED_PRODUCTS, ...RECOMMENDED_PRODUCTS];
 
-    const allProducts = [...FEATURED_PRODUCTS, ...RECOMMENDED_PRODUCTS].filter(p => {
-      if (isElectronics) {
-        return true;
-      }
-      return !p.category.toLowerCase().includes('elektron');
-    });
-    
     // 1. Try exact name match or partial match
-    let matches = allProducts.filter(p => 
-      p.name.toLowerCase().includes(result.name.toLowerCase()) || 
+    let matches = allProducts.filter(p =>
+      p.name.toLowerCase().includes(result.name.toLowerCase()) ||
       result.name.toLowerCase().includes(p.name.toLowerCase())
     );
 
-    // 2. If few matches, fallback to category
-    if (matches.length < 2) {
-      const categoryMatches = allProducts.filter(p => 
-        p.category.toLowerCase().includes(result.category.toLowerCase())
+    // 2. If no exact matches, fallback to category for specific categories (e.g. fruits)
+    // But be careful not to suggest random things for distinct items like "iPhone" -> "Makaron"
+    if (matches.length === 0) {
+      const categoryMatches = allProducts.filter(p =>
+        p.category.toLowerCase() === result.category.toLowerCase()
       );
-      categoryMatches.forEach(cm => {
-        if (!matches.find(m => m.id === cm.id)) {
-          matches.push(cm);
-        }
-      });
+      // Only include category matches if they share some keyword or strictly same category?
+      // For now, let's include top 3 category matches if empty
+      // But only if category is 'Food' related?
+      // User request: "Oba marketdə satılmaz deyə... tapılmadı bildir".
+      // So if I scan a 'Bracelet' and Oba doesn't sell it, matches should be empty.
+
+      // Let's only use category fallback if the detected category is one of our known categories 
+      // (from mockData logic).
+      const knownCategories = new Set(allProducts.map(p => p.category.toLowerCase()));
+      if (knownCategories.has(result.category.toLowerCase())) {
+        matches = categoryMatches.slice(0, 3);
+      }
     }
 
-    const targetStores = categoryConfig.stores;
-    const fallbackName = result.name || 'Naməlum məhsul';
-    const fallbackCategory = result.category || 'Məhsul';
-
-    while (matches.length < 3) {
-      const store = targetStores[matches.length % targetStores.length];
-      matches.push(
-        createMockMatch(store, fallbackName, fallbackCategory, categoryConfig) as any
-      );
-    }
+    const foundInStore = matches.length > 0;
 
     // Format and sort by price
     const finalMatches = matches
@@ -271,11 +222,15 @@ Markdown, şərh və ya mətn əlavə ETMƏ.
           eta: meta.eta,
         };
       })
-      .sort((a, b) => a.price - b.price)
-      .slice(0, 3); // Top 3 cheapest
+      .sort((a, b) => a.price - b.price);
 
-    const bestPrice = finalMatches.reduce((best, current) => (current.price < best.price ? current : best), finalMatches[0]);
-    const closestStore = finalMatches.reduce((closest, current) => (current.distanceKm < closest.distanceKm ? current : closest), finalMatches[0]);
+    const bestPrice = finalMatches.length > 0
+      ? finalMatches.reduce((best, current) => (current.price < best.price ? current : best), finalMatches[0])
+      : undefined;
+
+    const closestStore = finalMatches.length > 0
+      ? finalMatches.reduce((closest, current) => (current.distanceKm < closest.distanceKm ? current : closest), finalMatches[0])
+      : undefined;
 
     return {
       detectedName: result.name,
@@ -285,6 +240,7 @@ Markdown, şərh və ya mətn əlavə ETMƏ.
       matches: finalMatches,
       bestPrice,
       closestStore,
+      foundInStore,
     };
 
   } catch (error) {
