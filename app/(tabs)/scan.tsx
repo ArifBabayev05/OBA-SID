@@ -243,6 +243,10 @@ export default function ScanScreen() {
   };
 
   const handleImage = async (uri: string) => {
+    console.log("[scan] ===== handleImage START =====");
+    console.log("[scan] imageUri:", uri);
+    console.log("[scan] scanMode:", scanMode);
+
     setCapturedImage(uri);
     setIsProcessing(true);
     setProcessingHint(
@@ -251,8 +255,14 @@ export default function ScanScreen() {
 
     try {
       if (scanMode === "receipt") {
+        console.log("[scan] Receipt mode — processReceiptImage çağırılır...");
         const receiptData = await processReceiptImage(uri);
+        console.log(
+          "[scan] Receipt data:",
+          JSON.stringify(receiptData, null, 2),
+        );
         const totalAmount = receiptData?.totalAmount;
+        console.log("[scan] totalAmount:", totalAmount);
 
         if (
           !receiptData ||
@@ -260,6 +270,7 @@ export default function ScanScreen() {
           !totalAmount ||
           Number(totalAmount) <= 0
         ) {
+          console.log("[scan] ❌ Receipt data yanlışdır, modal göstərilir");
           showModal(
             "Qəbz tapılmadı",
             "Zəhmət olmasa qəbzi kameraya daha yaxın tutun.",
@@ -272,8 +283,11 @@ export default function ScanScreen() {
         }
 
         if (receiptData.text) {
+          console.log("[scan] Receipt text mövcuddur, save edilir...");
           const status = await saveReceipt(receiptData as any);
+          console.log("[scan] Save status:", status);
           if (status === "duplicate") {
+            console.log("[scan] ⚠️ Dublikat qəbz");
             showModal("Mövcuddur", "Bu qəbz artıq emal edilib.", "warning");
             resetScanner();
             return;
@@ -292,13 +306,32 @@ export default function ScanScreen() {
           }, 2000);
         }
       } else {
+        console.log(
+          "[scan] Product mode — identifyProductFromImage çağırılır...",
+        );
+        console.log("[scan] URI göndərilir:", uri);
         const analysis = await identifyProductFromImage(uri);
+        console.log(
+          "[scan] ✅ identifyProductFromImage cavabı:",
+          JSON.stringify(analysis, null, 2),
+        );
         setIsProcessing(false);
-        // console.log('analysis', JSON.stringify(analysis, null, 2));
+
         if (analysis) {
+          console.log("[scan] ✅ Məhsul tapıldı!");
+          console.log("[scan] detectedName:", analysis.detectedName);
+          console.log("[scan] category:", analysis.category);
+          console.log("[scan] confidence:", analysis.confidence);
+          console.log("[scan] foundInStore:", analysis.foundInStore);
+          console.log("[scan] matches count:", analysis.matches.length);
+          console.log("[scan] bestPrice:", analysis.bestPrice);
+          console.log("[scan] closestStore:", analysis.closestStore);
           setProductAnalysis(analysis);
           setProcessingHint("");
         } else {
+          console.log(
+            '[scan] ❌ analysis null gəldi — "Məhsul tanınmadı" göstərilir',
+          );
           showModal(
             "Tapılmadı",
             "Məhsul tanınmadı. Daha yaxından çəkməyə çalışın.",
@@ -309,14 +342,20 @@ export default function ScanScreen() {
         }
       }
     } catch (error: any) {
+      console.log("[scan] ❌ CATCH BLOCK xətası:", error);
+      console.log("[scan] Error message:", error?.message);
+      console.log("[scan] Error code:", error?.code);
+
       if (scanMode === "product") {
         if (error?.code === "NO_PRODUCT") {
+          console.log("[scan] NO_PRODUCT xətası");
           showModal(
             "Məhsul tapılmadı",
             "Yaxın məsafədən yalnız məhsulun şəklini çəkin.",
             "warning",
           );
         } else {
+          console.log("[scan] Ümumi Smart Lens xətası");
           showModal(
             "Smart Lens xətası",
             error?.message || "Analiz zamanı xəta baş verdi.",
@@ -337,6 +376,7 @@ export default function ScanScreen() {
       );
       resetScanner();
     }
+    console.log("[scan] ===== handleImage END =====");
   };
 
   const scanLineOpacity = scanAnimation.interpolate({

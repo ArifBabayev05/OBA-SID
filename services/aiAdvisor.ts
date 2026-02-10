@@ -1,25 +1,30 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { DatasetEntry } from './datasetService';
-import { buildInsights } from './insightsService';
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { DatasetEntry } from "./datasetService";
+import { buildInsights } from "./insightsService";
 
-export const AI_SUMMARY_KEY = 'ai_summary';
+export const AI_SUMMARY_KEY = "ai_summary";
 
 export interface AISummary {
   headline: string;
   bulletPoints: string[];
   recommendations: string[];
   timestamp: string;
-  spendingTrend: 'increasing' | 'decreasing' | 'stable';
+  spendingTrend: "increasing" | "decreasing" | "stable";
   savingsTip: string;
   weeklyPrediction?: string;
 }
 
 const callLLM = async (prompt: string): Promise<string | null> => {
-  const apiKey = "AIzaSyAQQnX3bEfBbd72QXzVEC4YCnKxHVsp25k";
-  if (!apiKey) return null;
+  console.log("[aiAdvisor] ===== callLLM START =====");
+  const apiKey = process.env.EXPO_PUBLIC_GEMINI_API_KEY;
+  if (!apiKey) {
+    console.log("[aiAdvisor] ❌ API key yoxdur, return null");
+    return null;
+  }
+  console.log("[aiAdvisor] ✅ API key mövcuddur");
 
-  const model = 'gemini-2.0-flash';
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+  const model = "gemini-2.5-flash";
+const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
 
   const fullPrompt = `
 Sən Azərbaycan alıcıları üçün şəxsi grocery qənaət köməkçisisən.
@@ -30,11 +35,18 @@ Məlumat:
 ${prompt}
 `.trim();
 
+  console.log("[aiAdvisor] LLM prompt uzunluğu:", fullPrompt.length);
+  console.log(
+    "[aiAdvisor] LLM prompt (ilk 500 simvol):",
+    fullPrompt.substring(0, 500),
+  );
+
   try {
+    console.log("[aiAdvisor] Gemini API-yə sorğu göndərilir...");
     const response = await fetch(url, {
-      method: 'POST',
+      method: "POST",
       headers: {
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
       },
       body: JSON.stringify({
         contents: [
@@ -45,64 +57,143 @@ ${prompt}
       }),
     });
 
+    console.log(
+      "[aiAdvisor] Gemini API status:",
+      response.status,
+      response.statusText,
+    );
+
     if (!response.ok) {
+      const errorBody = await response.text();
+      console.log("[aiAdvisor] ❌ API xətası, response body:", errorBody);
       return null;
     }
 
     const data = await response.json();
+    console.log(
+      "[aiAdvisor] ✅ Gemini raw response:",
+      JSON.stringify(data, null, 2),
+    );
+
     const text =
       data?.candidates?.[0]?.content?.parts?.[0]?.text ??
       data?.candidates?.[0]?.content?.parts?.[0]?.inlineData ??
       null;
 
+    console.log("[aiAdvisor] Extracted text:", text);
+
     if (!text) {
+      console.log("[aiAdvisor] ❌ LLM-dən text gəlmədi, return null");
       return null;
     }
 
+    console.log(
+      "[aiAdvisor] ✅ LLM cavabı uğurla alındı, uzunluq:",
+      (text as string).length,
+    );
+    console.log("[aiAdvisor] ===== callLLM END =====");
     return text as string;
   } catch (error: any) {
+    console.log(
+      "[aiAdvisor] ❌ callLLM CATCH xətası:",
+      error?.message || error,
+    );
     return null;
   }
 };
 
+export const generateAISummary = async (
+  entries: DatasetEntry[],
+): Promise<AISummary> => {
+  console.log("[aiAdvisor] ===== generateAISummary START =====");
+  console.log("[aiAdvisor] Entries sayı:", entries.length);
 
-export const generateAISummary = async (entries: DatasetEntry[]): Promise<AISummary> => {
-  const insights = buildInsights(entries);
-
-  if (entries.length === 0) {
-    return {
-      headline: 'Qəbz skan etməyə başlayın',
-      bulletPoints: ['Qəbzlərinizi skan edin', 'Xərclərinizi izləyin', 'Qənaət edin'],
-      recommendations: [
-        'Qəbz skan etməklə başlayın',
-        'Mağaza məlumatlarınız toplanacaq',
-        'AI təhlili tezliklə hazır olacaq'
-      ],
-      timestamp: new Date().toISOString(),
-      spendingTrend: 'stable',
-      savingsTip: 'İlk qəbzinizi skan edərək ağıllı qənaət tövsiyələri alın.',
-    };
+  if (entries.length > 0) {
+    console.log("[aiAdvisor] İlk entry:", JSON.stringify(entries[0], null, 2));
+    console.log(
+      "[aiAdvisor] Son entry:",
+      JSON.stringify(entries[entries.length - 1], null, 2),
+    );
   }
 
-  const latestStore = entries[0]?.storeName || 'naməlum mağaza';
-  const latestTotal = entries[0]?.totalAmount?.toFixed(2) ?? '0.00';
+  const insights = buildInsights(entries);
+  console.log(
+    "[aiAdvisor] ✅ Insights quruldu:",
+    JSON.stringify(
+      {
+        monthlySpend: insights.monthlySpend,
+        topProducts: insights.topProducts.slice(0, 5),
+        weeklyTrends: insights.weeklyTrends,
+        savingsOpportunity: insights.savingsOpportunity,
+        spendingPrediction: insights.spendingPrediction,
+      },
+      null,
+      2,
+    ),
+  );
+
+  if (entries.length === 0) {
+    const emptySummary: AISummary = {
+      headline: "Qəbz skan etməyə başlayın",
+      bulletPoints: [
+        "Qəbzlərinizi skan edin",
+        "Xərclərinizi izləyin",
+        "Qənaət edin",
+      ],
+      recommendations: [
+        "Qəbz skan etməklə başlayın",
+        "Mağaza məlumatlarınız toplanacaq",
+        "AI təhlili tezliklə hazır olacaq",
+      ],
+      timestamp: new Date().toISOString(),
+      spendingTrend: "stable",
+      savingsTip: "İlk qəbzinizi skan edərək ağıllı qənaət tövsiyələri alın.",
+    };
+    console.log(
+      "[aiAdvisor] ⚠️ Entry yoxdur, boş summary qaytarılır:",
+      JSON.stringify(emptySummary, null, 2),
+    );
+    return emptySummary;
+  }
+
+  const latestStore = entries[0]?.storeName || "naməlum mağaza";
+  const latestTotal = entries[0]?.totalAmount?.toFixed(2) ?? "0.00";
   const totalSpend = entries.reduce((sum, e) => sum + (e.totalAmount || 0), 0);
-  const topProducts = insights.topProducts.slice(0, 3).map(p => p.name).join(', ') || 'məlumat yoxdur';
+  const topProducts =
+    insights.topProducts
+      .slice(0, 3)
+      .map((p) => p.name)
+      .join(", ") || "məlumat yoxdur";
+
+  console.log("[aiAdvisor] latestStore:", latestStore);
+  console.log("[aiAdvisor] latestTotal:", latestTotal);
+  console.log("[aiAdvisor] totalSpend:", totalSpend.toFixed(2));
+  console.log("[aiAdvisor] topProducts:", topProducts);
 
   const weeklyTrends = insights.weeklyTrends;
-  let spendingTrend: 'increasing' | 'decreasing' | 'stable' = 'stable';
+  let spendingTrend: "increasing" | "decreasing" | "stable" = "stable";
   if (weeklyTrends.length >= 2) {
     const lastWeek = weeklyTrends[weeklyTrends.length - 1].amount;
     const previousWeek = weeklyTrends[weeklyTrends.length - 2].amount;
+    console.log("[aiAdvisor] Weekly trend müqayisəsi:", {
+      lastWeek,
+      previousWeek,
+    });
     if (lastWeek > previousWeek * 1.1) {
-      spendingTrend = 'increasing';
+      spendingTrend = "increasing";
     } else if (lastWeek < previousWeek * 0.9) {
-      spendingTrend = 'decreasing';
+      spendingTrend = "decreasing";
     }
   }
+  console.log("[aiAdvisor] spendingTrend:", spendingTrend);
 
   const savingsOpportunity = insights.savingsOpportunity;
   const prediction = insights.spendingPrediction;
+  console.log(
+    "[aiAdvisor] savingsOpportunity:",
+    JSON.stringify(savingsOpportunity),
+  );
+  console.log("[aiAdvisor] prediction:", JSON.stringify(prediction));
 
   const basePrompt = `
 İSTİFADƏÇİ PROFİLİ:
@@ -111,7 +202,7 @@ export const generateAISummary = async (entries: DatasetEntry[]): Promise<AISumm
 - Ümumi xərc: ${totalSpend.toFixed(2)} AZN
 - Skan edilmiş qəbz sayı: ${entries.length}
 - Ən çox alınan məhsullar: ${topProducts}
-- Xərc trendi: ${spendingTrend === 'increasing' ? 'Artmaqdadır' : spendingTrend === 'decreasing' ? 'Azalmaqdadır' : 'Sabitdir'}
+- Xərc trendi: ${spendingTrend === "increasing" ? "Artmaqdadır" : spendingTrend === "decreasing" ? "Azalmaqdadır" : "Sabitdir"}
 - Qənaət potensialı: ${savingsOpportunity.potential}₼
 - Növbəti həftə proqnozu: ${prediction.nextWeekEstimate}₼ (Etibar: ${prediction.confidence})
 
@@ -132,31 +223,65 @@ Başlıq: <Qısa, praktik başlıq - maksimum 6 söz>
 Azərbaycan dilində yaz. Ümumi sözlər yox, KONKRET rəqəm və təkliflər ver.
 `;
 
+  console.log("[aiAdvisor] LLM çağırılır...");
   const llmResponse = await callLLM(basePrompt);
+  console.log("[aiAdvisor] LLM response:", llmResponse);
 
-  let headline = spendingTrend === 'increasing'
-    ? 'Xərcləriniz artmaqdadır'
-    : spendingTrend === 'decreasing'
-      ? 'Yaxşı iş! Xərcləriniz azalır'
-      : 'Xərcləriniz sabitdir';
+  let headline =
+    spendingTrend === "increasing"
+      ? "Xərcləriniz artmaqdadır"
+      : spendingTrend === "decreasing"
+        ? "Yaxşı iş! Xərcləriniz azalır"
+        : "Xərcləriniz sabitdir";
 
   let recommendations: string[] = [
     `${latestStore} mağazasında son alışınız ${latestTotal} AZN olub`,
     `Bu ay ${insights.monthlySpend.toFixed(2)} AZN xərcləmisiniz`,
-    savingsOpportunity.recommendation
+    savingsOpportunity.recommendation,
   ];
 
+  console.log("[aiAdvisor] Default headline:", headline);
+  console.log("[aiAdvisor] Default recommendations:", recommendations);
+
   if (llmResponse) {
-    const lines = llmResponse.split('\n').filter(l => l.trim().length > 0);
-    const headlineLine = lines.find(l => l.toLowerCase().includes('başlıq') || (!l.startsWith('-') && !l.startsWith('•') && l.length > 10 && l.length < 60));
+    console.log("[aiAdvisor] ✅ LLM cavabı var, parse edilir...");
+    const lines = llmResponse.split("\n").filter((l) => l.trim().length > 0);
+    console.log("[aiAdvisor] LLM lines:", lines);
+
+    const headlineLine = lines.find(
+      (l) =>
+        l.toLowerCase().includes("başlıq") ||
+        (!l.startsWith("-") &&
+          !l.startsWith("•") &&
+          l.length > 10 &&
+          l.length < 60),
+    );
+    console.log("[aiAdvisor] Tapılan headline line:", headlineLine);
+
     if (headlineLine) {
-      headline = headlineLine.replace(/başlıq:/i, '').replace(/^[-•\s]+/, '').trim();
+      headline = headlineLine
+        .replace(/başlıq:/i, "")
+        .replace(/^[-•\s]+/, "")
+        .trim();
+      console.log("[aiAdvisor] Yeni headline:", headline);
     }
 
-    const recLines = lines.filter(l => (l.trim().startsWith('-') || l.trim().startsWith('•')) && l.length > 10);
+    const recLines = lines.filter(
+      (l) =>
+        (l.trim().startsWith("-") || l.trim().startsWith("•")) && l.length > 10,
+    );
+    console.log("[aiAdvisor] Tapılan recommendation lines:", recLines);
+
     if (recLines.length > 0) {
-      recommendations = recLines.map(l => l.replace(/^[-•\s]+/, '').trim()).slice(0, 3);
+      recommendations = recLines
+        .map((l) => l.replace(/^[-•\s]+/, "").trim())
+        .slice(0, 3);
+      console.log("[aiAdvisor] Yeni recommendations:", recommendations);
     }
+  } else {
+    console.log(
+      "[aiAdvisor] ⚠️ LLM cavabı null, default dəyərlər istifadə olunur",
+    );
   }
 
   const summary: AISummary = {
@@ -169,22 +294,50 @@ Azərbaycan dilində yaz. Ümumi sözlər yox, KONKRET rəqəm və təkliflər v
     weeklyPrediction: `Növbəti həftə təxmini: ${prediction.nextWeekEstimate}₼`,
   };
 
+  console.log("[aiAdvisor] ===== FINAL SUMMARY =====");
+  console.log("[aiAdvisor] headline:", summary.headline);
+  console.log("[aiAdvisor] bulletPoints:", summary.bulletPoints);
+  console.log("[aiAdvisor] recommendations:", summary.recommendations);
+  console.log("[aiAdvisor] spendingTrend:", summary.spendingTrend);
+  console.log("[aiAdvisor] savingsTip:", summary.savingsTip);
+  console.log("[aiAdvisor] weeklyPrediction:", summary.weeklyPrediction);
+  console.log("[aiAdvisor] Full summary:", JSON.stringify(summary, null, 2));
+
+  console.log("[aiAdvisor] AsyncStorage-ə yazılır...");
   await AsyncStorage.setItem(AI_SUMMARY_KEY, JSON.stringify(summary));
+  console.log("[aiAdvisor] ✅ AsyncStorage-ə yazıldı");
+  console.log("[aiAdvisor] ===== generateAISummary END =====");
+
   return summary;
 };
 
 export const getLatestAISummary = async (): Promise<AISummary | null> => {
+  console.log("[aiAdvisor] ===== getLatestAISummary START =====");
   try {
     const stored = await AsyncStorage.getItem(AI_SUMMARY_KEY);
-    return stored ? (JSON.parse(stored) as AISummary) : null;
+    console.log("[aiAdvisor] AsyncStorage-dən oxundu, mövcuddur:", !!stored);
+    if (stored) {
+      const parsed = JSON.parse(stored) as AISummary;
+      console.log(
+        "[aiAdvisor] Parsed summary:",
+        JSON.stringify(parsed, null, 2),
+      );
+      return parsed;
+    }
+    console.log("[aiAdvisor] ⚠️ Stored summary yoxdur, return null");
+    return null;
   } catch (error) {
+    console.log("[aiAdvisor] ❌ getLatestAISummary xətası:", error);
     return null;
   }
 };
 
 export const clearAISummary = async (): Promise<void> => {
+  console.log("[aiAdvisor] ===== clearAISummary START =====");
   try {
     await AsyncStorage.removeItem(AI_SUMMARY_KEY);
+    console.log("[aiAdvisor] ✅ AI Summary silindi");
   } catch (error) {
+    console.log("[aiAdvisor] ❌ clearAISummary xətası:", error);
   }
 };
