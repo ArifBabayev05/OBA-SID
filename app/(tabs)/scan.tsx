@@ -1,8 +1,20 @@
-import { CameraView, useCameraPermissions } from 'expo-camera';
-import * as ImagePicker from 'expo-image-picker';
-import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
-import { AlertTriangle, ArrowLeft, CheckCircle, ImageIcon, Loader2, MapPin, QrCode, Receipt as ReceiptIcon, RefreshCw, ShoppingCart, Zap } from 'lucide-react-native';
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { CameraView, useCameraPermissions } from "expo-camera";
+import * as ImagePicker from "expo-image-picker";
+import { router, useFocusEffect, useLocalSearchParams } from "expo-router";
+import {
+  AlertTriangle,
+  ArrowLeft,
+  CheckCircle,
+  ImageIcon,
+  Loader2,
+  MapPin,
+  QrCode,
+  Receipt as ReceiptIcon,
+  RefreshCw,
+  ShoppingCart,
+  Zap,
+} from "lucide-react-native";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
   Animated,
   Dimensions,
@@ -15,19 +27,22 @@ import {
   Text,
   TouchableOpacity,
   View,
-} from 'react-native';
+} from "react-native";
 
-import { CustomModal } from '@/components/CustomModal';
-import { Palette } from '@/constants/theme';
-import { identifyProductFromImage, ProductAnalysis } from '@/services/aiService';
-import { processQRCode, processReceiptImage } from '@/services/ocrService';
-import { saveReceipt } from '@/services/storageService';
-import { BlurView } from 'expo-blur';
-import { LinearGradient } from 'expo-linear-gradient';
+import { CustomModal } from "@/components/CustomModal";
+import { Palette } from "@/constants/theme";
+import {
+  identifyProductFromImage,
+  ProductAnalysis,
+} from "@/services/aiService";
+import { processQRCode, processReceiptImage } from "@/services/ocrService";
+import { saveReceipt } from "@/services/storageService";
+import { BlurView } from "expo-blur";
+import { LinearGradient } from "expo-linear-gradient";
 
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
+const { width: SCREEN_WIDTH } = Dimensions.get("window");
 
-type ScanMode = 'receipt' | 'product';
+type ScanMode = "receipt" | "product";
 
 export default function ScanScreen() {
   const params = useLocalSearchParams<{ mode?: string }>();
@@ -36,18 +51,29 @@ export default function ScanScreen() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [capturedImage, setCapturedImage] = useState<string | null>(null);
   const [scanned, setScanned] = useState(false);
-  const initialMode: ScanMode = params?.mode === 'product' ? 'product' : 'receipt';
+  const initialMode: ScanMode =
+    params?.mode === "product" ? "product" : "receipt";
   const [scanMode, setScanMode] = useState<ScanMode>(initialMode);
-  const [productAnalysis, setProductAnalysis] = useState<ProductAnalysis | null>(null);
+  const [productAnalysis, setProductAnalysis] =
+    useState<ProductAnalysis | null>(null);
 
   const [scanAnimation] = useState(new Animated.Value(0));
   const animationRef = useRef<Animated.CompositeAnimation | null>(null);
+  const scanGuardRef = useRef(false);
   const [modalVisible, setModalVisible] = useState(false);
-  const [modalConfig, setModalConfig] = useState<{ title: string; message: string; type: 'success' | 'error' | 'info' | 'warning' }>({ title: '', message: '', type: 'info' });
-  const [processingHint, setProcessingHint] = useState('');
+  const [modalConfig, setModalConfig] = useState<{
+    title: string;
+    message: string;
+    type: "success" | "error" | "info" | "warning";
+  }>({ title: "", message: "", type: "info" });
+  const [processingHint, setProcessingHint] = useState("");
   const processingAnim = useRef(new Animated.Value(0)).current;
 
-  const showModal = (title: string, message: string, type: 'success' | 'error' | 'info' | 'warning' = 'info') => {
+  const showModal = (
+    title: string,
+    message: string,
+    type: "success" | "error" | "info" | "warning" = "info",
+  ) => {
     setModalConfig({ title, message, type });
     setModalVisible(true);
   };
@@ -68,17 +94,18 @@ export default function ScanScreen() {
           duration: 2000,
           useNativeDriver: true,
         }),
-      ])
+      ]),
     );
     animationRef.current.start();
   }, [scanAnimation]);
 
   const resetScanner = useCallback(() => {
+    scanGuardRef.current = false;
     setScanned(false);
     setIsProcessing(false);
     setCapturedImage(null);
     setProductAnalysis(null);
-    setProcessingHint('');
+    setProcessingHint("");
     startScanAnimation();
   }, [startScanAnimation]);
 
@@ -88,7 +115,7 @@ export default function ScanScreen() {
       return () => {
         animationRef.current?.stop();
       };
-    }, [resetScanner])
+    }, [resetScanner]),
   );
 
   useEffect(() => {
@@ -99,7 +126,7 @@ export default function ScanScreen() {
           duration: 1500,
           useNativeDriver: true,
           easing: Easing.linear,
-        })
+        }),
       ).start();
     } else {
       processingAnim.stopAnimation();
@@ -114,26 +141,39 @@ export default function ScanScreen() {
   if (!permission.granted) {
     return (
       <View style={styles.permissionContainer}>
-        <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
+        <TouchableOpacity
+          style={styles.backButton}
+          onPress={() => router.back()}
+        >
           <ArrowLeft size={24} color="white" />
         </TouchableOpacity>
         <Text style={styles.permissionTitle}>Kamera icazəsi lazımdır</Text>
         <Text style={styles.permissionText}>
           Qəbzləri skan etmək və məhsulları tanımaq üçün kameraya icazə verin.
         </Text>
-        <TouchableOpacity style={styles.permissionButton} onPress={requestPermission}>
+        <TouchableOpacity
+          style={styles.permissionButton}
+          onPress={requestPermission}
+        >
           <Text style={styles.permissionButtonText}>İcazə ver</Text>
         </TouchableOpacity>
       </View>
     );
   }
 
-  const handleBarcodeScanned = async ({ type, data }: { type: string, data: string }) => {
-    if (scanned || scanMode !== 'receipt') return;
+  const handleBarcodeScanned = async ({
+    type,
+    data,
+  }: {
+    type: string;
+    data: string;
+  }) => {
+    if (scanGuardRef.current || scanned || scanMode !== "receipt") return;
+    scanGuardRef.current = true;
 
-    if (!data.startsWith('https://monitoring.e-kassa.gov.az')) {
-      showModal('Yanlış QR', 'Bu QR e-kassa formatında deyil.', 'warning');
-      setScanned(false);
+    if (!data.startsWith("https://monitoring.e-kassa.gov.az")) {
+      setScanned(true);
+      showModal("Yanlış QR", "Bu QR e-kassa formatında deyil.", "warning");
       setIsProcessing(false);
       setCapturedImage(null);
       return;
@@ -146,25 +186,29 @@ export default function ScanScreen() {
       const receiptData = await processQRCode(data);
       const status = await saveReceipt(receiptData as any);
 
-      if (status === 'duplicate') {
-        showModal('Mövcuddur', 'Bu qəbz artıq bazada var.', 'warning');
+      if (status === "duplicate") {
+        showModal("Mövcuddur", "Bu qəbz artıq bazada var.", "warning");
         resetScanner();
         return;
       }
 
       showModal(
-        'Uğurlu!',
+        "Uğurlu!",
         `Qəbz emal edildi.\nCəmi: ${receiptData.totalAmount?.toFixed(2)}₼\nMəhsul: ${receiptData.items?.length || 0}`,
-        'success'
+        "success",
       );
 
       setTimeout(() => {
         resetScanner();
-        router.push('/');
+        router.push("/");
       }, 2000);
     } catch (error: any) {
-      console.error('Error processing QR:', error.message);
-      showModal('Xəta', error.message || 'QR kodu emal etmək mümkün olmadı', 'error');
+      console.error("Error processing QR:", error.message);
+      showModal(
+        "Xəta",
+        error.message || "QR kodu emal etmək mümkün olmadı",
+        "error",
+      );
       resetScanner();
     }
   };
@@ -172,13 +216,16 @@ export default function ScanScreen() {
   const takePicture = async () => {
     if (cameraRef) {
       try {
-        const photo = await cameraRef.takePictureAsync({ quality: 0.5, base64: true });
+        const photo = await cameraRef.takePictureAsync({
+          quality: 0.5,
+          base64: true,
+        });
         if (photo) {
           handleImage(photo.uri);
         }
       } catch (error) {
-        console.error('Failed to take picture', error);
-        showModal('Xəta', 'Şəkil çəkmək mümkün olmadı', 'error');
+        console.error("Failed to take picture", error);
+        showModal("Xəta", "Şəkil çəkmək mümkün olmadı", "error");
       }
     }
   };
@@ -198,39 +245,50 @@ export default function ScanScreen() {
   const handleImage = async (uri: string) => {
     setCapturedImage(uri);
     setIsProcessing(true);
-    setProcessingHint(scanMode === 'receipt' ? 'Qəbz oxunur...' : 'Məhsul analiz edilir...');
+    setProcessingHint(
+      scanMode === "receipt" ? "Qəbz oxunur..." : "Məhsul analiz edilir...",
+    );
 
     try {
-      if (scanMode === 'receipt') {
+      if (scanMode === "receipt") {
         const receiptData = await processReceiptImage(uri);
         const totalAmount = receiptData?.totalAmount;
 
-        if (!receiptData || !receiptData.text || !totalAmount || Number(totalAmount) <= 0) {
-          showModal('Qəbz tapılmadı', 'Zəhmət olmasa qəbzi kameraya daha yaxın tutun.', 'warning');
+        if (
+          !receiptData ||
+          !receiptData.text ||
+          !totalAmount ||
+          Number(totalAmount) <= 0
+        ) {
+          showModal(
+            "Qəbz tapılmadı",
+            "Zəhmət olmasa qəbzi kameraya daha yaxın tutun.",
+            "warning",
+          );
           setIsProcessing(false);
-          setProcessingHint('');
+          setProcessingHint("");
           setCapturedImage(null);
           return;
         }
 
         if (receiptData.text) {
           const status = await saveReceipt(receiptData as any);
-          if (status === 'duplicate') {
-            showModal('Mövcuddur', 'Bu qəbz artıq emal edilib.', 'warning');
+          if (status === "duplicate") {
+            showModal("Mövcuddur", "Bu qəbz artıq emal edilib.", "warning");
             resetScanner();
             return;
           }
-          setProcessingHint('');
+          setProcessingHint("");
           showModal(
-            'Uğurlu!',
+            "Uğurlu!",
             `Qəbz emal edildi.\nCəmi: ${receiptData.totalAmount?.toFixed(2)}₼\nMəhsul: ${receiptData.items?.length || 0}`,
-            'success'
+            "success",
           );
 
           setTimeout(() => {
             setCapturedImage(null);
             resetScanner();
-            router.push('/');
+            router.push("/");
           }, 2000);
         }
       } else {
@@ -239,28 +297,44 @@ export default function ScanScreen() {
         // console.log('analysis', JSON.stringify(analysis, null, 2));
         if (analysis) {
           setProductAnalysis(analysis);
-          setProcessingHint('');
+          setProcessingHint("");
         } else {
-          showModal('Tapılmadı', 'Məhsul tanınmadı. Daha yaxından çəkməyə çalışın.', 'warning');
+          showModal(
+            "Tapılmadı",
+            "Məhsul tanınmadı. Daha yaxından çəkməyə çalışın.",
+            "warning",
+          );
           setCapturedImage(null);
-          setProcessingHint('');
+          setProcessingHint("");
         }
       }
     } catch (error: any) {
-      if (scanMode === 'product') {
-        if (error?.code === 'NO_PRODUCT') {
-          showModal('Məhsul tapılmadı', 'Yaxın məsafədən yalnız məhsulun şəklini çəkin.', 'warning');
+      if (scanMode === "product") {
+        if (error?.code === "NO_PRODUCT") {
+          showModal(
+            "Məhsul tapılmadı",
+            "Yaxın məsafədən yalnız məhsulun şəklini çəkin.",
+            "warning",
+          );
         } else {
-          showModal('Smart Lens xətası', error?.message || 'Analiz zamanı xəta baş verdi.', 'error');
+          showModal(
+            "Smart Lens xətası",
+            error?.message || "Analiz zamanı xəta baş verdi.",
+            "error",
+          );
         }
         setIsProcessing(false);
-        setProcessingHint('');
+        setProcessingHint("");
         setCapturedImage(null);
         setProductAnalysis(null);
         return;
       }
 
-      showModal('Xəta', error?.message || 'Emal zamanı xəta baş verdi.', 'error');
+      showModal(
+        "Xəta",
+        error?.message || "Emal zamanı xəta baş verdi.",
+        "error",
+      );
       resetScanner();
     }
   };
@@ -276,42 +350,89 @@ export default function ScanScreen() {
         colors={[Palette.primaryDark, Palette.primary]}
         style={styles.backgroundGradient}
       />
-      <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
+      <StatusBar
+        barStyle="light-content"
+        translucent
+        backgroundColor="transparent"
+      />
 
       {/* Header & Mode Switcher */}
       <View style={styles.header}>
-        <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
+        <TouchableOpacity
+          style={styles.backButton}
+          onPress={() => router.back()}
+        >
           <ArrowLeft size={24} color="white" />
         </TouchableOpacity>
 
         <View style={styles.modeSwitcher}>
           <TouchableOpacity
-            style={[styles.modeBtn, scanMode === 'receipt' && styles.modeBtnActive]}
-            onPress={() => { setScanMode('receipt'); resetScanner(); }}
+            style={[
+              styles.modeBtn,
+              scanMode === "receipt" && styles.modeBtnActive,
+            ]}
+            onPress={() => {
+              setScanMode("receipt");
+              resetScanner();
+            }}
           >
-            <ReceiptIcon size={16} color={scanMode === 'receipt' ? Palette.primary : '#94a3b8'} />
-            <Text style={[styles.modeText, scanMode === 'receipt' && styles.modeTextActive]}>Qəbz</Text>
+            <ReceiptIcon
+              size={16}
+              color={scanMode === "receipt" ? Palette.primary : "#94a3b8"}
+            />
+            <Text
+              style={[
+                styles.modeText,
+                scanMode === "receipt" && styles.modeTextActive,
+              ]}
+            >
+              Qəbz
+            </Text>
           </TouchableOpacity>
           <TouchableOpacity
-            style={[styles.modeBtn, scanMode === 'product' && styles.modeBtnActive]}
-            onPress={() => { setScanMode('product'); resetScanner(); }}
+            style={[
+              styles.modeBtn,
+              scanMode === "product" && styles.modeBtnActive,
+            ]}
+            onPress={() => {
+              setScanMode("product");
+              resetScanner();
+            }}
           >
-            <Zap size={16} color={scanMode === 'product' ? Palette.primary : '#94a3b8'} />
-            <Text style={[styles.modeText, scanMode === 'product' && styles.modeTextActive]}>Smart Lens</Text>
+            <Zap
+              size={16}
+              color={scanMode === "product" ? Palette.primary : "#94a3b8"}
+            />
+            <Text
+              style={[
+                styles.modeText,
+                scanMode === "product" && styles.modeTextActive,
+              ]}
+            >
+              Smart Lens
+            </Text>
           </TouchableOpacity>
         </View>
       </View>
 
       {capturedImage ? (
         <View style={styles.previewContainer}>
-          <Image source={{ uri: capturedImage }} style={styles.preview} resizeMode="contain" />
+          <Image
+            source={{ uri: capturedImage }}
+            style={styles.preview}
+            resizeMode="contain"
+          />
 
           {!isProcessing && productAnalysis && (
             <View style={styles.analysisCard}>
               <View style={styles.analysisHeader}>
                 <View style={{ flex: 1 }}>
-                  <Text style={styles.analysisTitle}>{productAnalysis.detectedName}</Text>
-                  <Text style={styles.analysisCategory}>{productAnalysis.category}</Text>
+                  <Text style={styles.analysisTitle}>
+                    {productAnalysis.detectedName}
+                  </Text>
+                  <Text style={styles.analysisCategory}>
+                    {productAnalysis.category}
+                  </Text>
                 </View>
                 <View style={styles.confidencePill}>
                   <Text style={styles.confidenceText}>
@@ -324,7 +445,9 @@ export default function ScanScreen() {
                 <>
                   <View style={styles.matchesHeaderRow}>
                     <Text style={styles.matchesLabel}>Mağaza təklifləri</Text>
-                    <Text style={styles.matchesCount}>{productAnalysis.matches.length} nəticə</Text>
+                    <Text style={styles.matchesCount}>
+                      {productAnalysis.matches.length} nəticə
+                    </Text>
                   </View>
 
                   <ScrollView
@@ -333,16 +456,23 @@ export default function ScanScreen() {
                     showsVerticalScrollIndicator={false}
                   >
                     {productAnalysis.matches.map((match, index) => (
-                      <View key={`${match.store}-${index}`} style={styles.matchRow}>
+                      <View
+                        key={`${match.store}-${index}`}
+                        style={styles.matchRow}
+                      >
                         <View style={styles.storeInfo}>
                           <ShoppingCart size={18} color={Palette.primary} />
                           <View>
                             <Text style={styles.storeName}>{match.store}</Text>
-                            <Text style={styles.matchAddress}>{match.address}</Text>
+                            <Text style={styles.matchAddress}>
+                              {match.address}
+                            </Text>
                           </View>
                         </View>
                         <View style={styles.matchDetails}>
-                          <Text style={styles.priceText}>{match.price.toFixed(2)}₼</Text>
+                          <Text style={styles.priceText}>
+                            {match.price.toFixed(2)}₼
+                          </Text>
                           <View style={styles.distanceRow}>
                             <MapPin size={14} color="#94a3b8" />
                             <Text style={styles.distanceText}>
@@ -360,7 +490,9 @@ export default function ScanScreen() {
                     <AlertTriangle size={32} color={Palette.warning} />
                   </View>
                   <View style={{ flex: 1 }}>
-                    <Text style={styles.notFoundTitle}>OBA Marketdə tapılmadı</Text>
+                    <Text style={styles.notFoundTitle}>
+                      OBA Marketdə tapılmadı
+                    </Text>
                     <Text style={styles.notFoundText}>
                       Hazırda OBA filiallarında satışda yoxdur.
                     </Text>
@@ -368,7 +500,10 @@ export default function ScanScreen() {
                 </View>
               )}
 
-              <TouchableOpacity style={styles.newScanButton} onPress={resetScanner}>
+              <TouchableOpacity
+                style={styles.newScanButton}
+                onPress={resetScanner}
+              >
                 <RefreshCw size={18} color="#fff" />
                 <Text style={styles.newScanText}>Yenidən skan et</Text>
               </TouchableOpacity>
@@ -377,7 +512,10 @@ export default function ScanScreen() {
 
           {!isProcessing && !productAnalysis && (
             <View style={styles.actionButtons}>
-              <TouchableOpacity style={styles.retakeButton} onPress={resetScanner}>
+              <TouchableOpacity
+                style={styles.retakeButton}
+                onPress={resetScanner}
+              >
                 <RefreshCw size={18} color="#e5e7eb" />
                 <Text style={styles.retakeText}>Yenidən çək</Text>
               </TouchableOpacity>
@@ -392,24 +530,35 @@ export default function ScanScreen() {
             ref={(ref) => {
               setCameraRef(ref);
             }}
-            onBarcodeScanned={scanned || scanMode === 'product' ? undefined : handleBarcodeScanned}
+            onBarcodeScanned={
+              scanned || scanMode === "product"
+                ? undefined
+                : handleBarcodeScanned
+            }
             barcodeScannerSettings={{
-              barcodeTypes: ['qr'],
+              barcodeTypes: ["qr"],
             }}
           />
           <View style={styles.overlay}>
             <View style={styles.topOverlay}>
               <Text style={styles.scanText}>
-                {scanMode === 'receipt' ? 'Qəbzi və ya QR kodu mərkəzə gətirin' : 'Məhsula tərəf yönəldin'}
+                {scanMode === "receipt"
+                  ? "Qəbzi və ya QR kodu mərkəzə gətirin"
+                  : "Məhsula tərəf yönəldin"}
               </Text>
             </View>
 
-            <View style={[styles.scanFrame, scanMode === 'product' && styles.smartFrame]}>
+            <View
+              style={[
+                styles.scanFrame,
+                scanMode === "product" && styles.smartFrame,
+              ]}
+            >
               {!scanned && (
                 <Animated.View
                   style={[
                     styles.scanLine,
-                    scanMode === 'product' && styles.smartScanLine,
+                    scanMode === "product" && styles.smartScanLine,
                     {
                       opacity: scanLineOpacity,
                       transform: [
@@ -431,10 +580,34 @@ export default function ScanScreen() {
                 </View>
               )}
 
-              <View style={[styles.corner, styles.cornerTL, scanMode === 'product' && styles.smartCorner]} />
-              <View style={[styles.corner, styles.cornerTR, scanMode === 'product' && styles.smartCorner]} />
-              <View style={[styles.corner, styles.cornerBL, scanMode === 'product' && styles.smartCorner]} />
-              <View style={[styles.corner, styles.cornerBR, scanMode === 'product' && styles.smartCorner]} />
+              <View
+                style={[
+                  styles.corner,
+                  styles.cornerTL,
+                  scanMode === "product" && styles.smartCorner,
+                ]}
+              />
+              <View
+                style={[
+                  styles.corner,
+                  styles.cornerTR,
+                  scanMode === "product" && styles.smartCorner,
+                ]}
+              />
+              <View
+                style={[
+                  styles.corner,
+                  styles.cornerBL,
+                  scanMode === "product" && styles.smartCorner,
+                ]}
+              />
+              <View
+                style={[
+                  styles.corner,
+                  styles.cornerBR,
+                  scanMode === "product" && styles.smartCorner,
+                ]}
+              />
             </View>
 
             <View style={styles.buttonContainer}>
@@ -456,7 +629,12 @@ export default function ScanScreen() {
                 <View style={styles.captureInner} />
               </TouchableOpacity>
 
-              <View style={[styles.actionButton, { opacity: scanMode === 'receipt' ? 1 : 0.3 }]}>
+              <View
+                style={[
+                  styles.actionButton,
+                  { opacity: scanMode === "receipt" ? 1 : 0.3 },
+                ]}
+              >
                 <View style={styles.actionIcon}>
                   <QrCode size={24} color="#fff" />
                 </View>
@@ -474,8 +652,10 @@ export default function ScanScreen() {
         type={modalConfig.type}
         onClose={() => {
           setModalVisible(false);
-          if (modalConfig.type === 'success' && scanMode === 'receipt') {
-            router.push('/');
+          if (modalConfig.type === "success" && scanMode === "receipt") {
+            router.push("/");
+          } else {
+            resetScanner();
           }
         }}
       />
@@ -490,7 +670,7 @@ export default function ScanScreen() {
                   {
                     rotate: processingAnim.interpolate({
                       inputRange: [0, 1],
-                      outputRange: ['0deg', '360deg'],
+                      outputRange: ["0deg", "360deg"],
                     }),
                   },
                 ],
@@ -500,7 +680,7 @@ export default function ScanScreen() {
             <Loader2 size={36} color={Palette.secondary} />
           </Animated.View>
           <Text style={styles.processingTitle}>
-            {scanMode === 'receipt' ? 'Oxunur...' : 'Analiz edilir...'}
+            {scanMode === "receipt" ? "Oxunur..." : "Analiz edilir..."}
           </Text>
           <Text style={styles.processingHint}>{processingHint}</Text>
         </BlurView>
@@ -512,74 +692,74 @@ export default function ScanScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#000',
+    backgroundColor: "#000",
   },
   backgroundGradient: {
     ...StyleSheet.absoluteFillObject,
   },
   header: {
-    position: 'absolute',
-    top: Platform.OS === 'ios' ? 50 : 40,
+    position: "absolute",
+    top: Platform.OS === "ios" ? 50 : 40,
     left: 16,
     right: 16,
     zIndex: 100,
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 12,
   },
   backButton: {
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: 'rgba(255, 255, 255, 0.15)',
-    alignItems: 'center',
-    justifyContent: 'center',
+    backgroundColor: "rgba(255, 255, 255, 0.15)",
+    alignItems: "center",
+    justifyContent: "center",
   },
   modeSwitcher: {
     flex: 1,
-    flexDirection: 'row',
-    backgroundColor: 'rgba(255, 255, 255, 0.15)',
+    flexDirection: "row",
+    backgroundColor: "rgba(255, 255, 255, 0.15)",
     borderRadius: 22,
     padding: 4,
   },
   modeBtn: {
     flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
     paddingVertical: 8,
     gap: 6,
     borderRadius: 18,
   },
   modeBtnActive: {
-    backgroundColor: '#fff',
+    backgroundColor: "#fff",
   },
   modeText: {
-    color: '#fff',
+    color: "#fff",
     fontSize: 13,
-    fontWeight: '700',
+    fontWeight: "700",
   },
   modeTextActive: {
     color: Palette.primary,
   },
   permissionContainer: {
     flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     backgroundColor: Palette.primary,
     paddingHorizontal: 24,
   },
   permissionTitle: {
     marginBottom: 12,
     fontSize: 20,
-    fontWeight: '800',
-    color: 'white',
+    fontWeight: "800",
+    color: "white",
   },
   permissionText: {
     marginBottom: 20,
-    textAlign: 'center',
+    textAlign: "center",
     fontSize: 15,
-    color: 'rgba(255,255,255,0.8)',
+    color: "rgba(255,255,255,0.8)",
   },
   permissionButton: {
     borderRadius: 20,
@@ -589,38 +769,38 @@ const styles = StyleSheet.create({
   },
   permissionButtonText: {
     fontSize: 16,
-    fontWeight: '800',
+    fontWeight: "800",
     color: Palette.primary,
   },
   previewContainer: {
     flex: 1,
-    backgroundColor: 'black',
+    backgroundColor: "black",
   },
   preview: {
     flex: 1,
-    width: '100%',
+    width: "100%",
   },
   actionButtons: {
-    position: 'absolute',
+    position: "absolute",
     bottom: 40,
-    width: '100%',
-    alignItems: 'center',
+    width: "100%",
+    alignItems: "center",
   },
   retakeButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     borderRadius: 25,
-    backgroundColor: 'rgba(255,255,255,0.2)',
+    backgroundColor: "rgba(255,255,255,0.2)",
     paddingHorizontal: 24,
     paddingVertical: 14,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.3)',
+    borderColor: "rgba(255,255,255,0.3)",
   },
   retakeText: {
     marginLeft: 8,
     fontSize: 15,
-    fontWeight: '700',
-    color: '#fff',
+    fontWeight: "700",
+    color: "#fff",
   },
   cameraContainer: {
     flex: 1,
@@ -629,63 +809,63 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   overlay: {
-    position: 'absolute',
+    position: "absolute",
     top: 0,
     left: 0,
     right: 0,
     bottom: 0,
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    alignItems: "center",
+    justifyContent: "space-between",
     paddingHorizontal: 24,
     paddingTop: 120,
     paddingBottom: 40,
   },
   topOverlay: {
     borderRadius: 20,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
     paddingHorizontal: 20,
     paddingVertical: 10,
   },
   scanText: {
     fontSize: 14,
-    fontWeight: '700',
-    color: 'white',
+    fontWeight: "700",
+    color: "white",
   },
   scanFrame: {
     height: 280,
     width: Math.min(280, SCREEN_WIDTH - 100),
     borderRadius: 24,
     borderWidth: 2,
-    borderColor: '#fff',
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
-    overflow: 'hidden',
+    borderColor: "#fff",
+    backgroundColor: "rgba(255, 255, 255, 0.05)",
+    overflow: "hidden",
   },
   smartFrame: {
     borderColor: Palette.secondary,
     borderRadius: 40,
   },
   scanLine: {
-    position: 'absolute',
+    position: "absolute",
     left: 0,
     right: 0,
     height: 2,
-    backgroundColor: '#fff',
+    backgroundColor: "#fff",
   },
   smartScanLine: {
     backgroundColor: Palette.secondary,
   },
   successIndicator: {
-    position: 'absolute',
-    top: '50%',
-    left: '50%',
+    position: "absolute",
+    top: "50%",
+    left: "50%",
     marginLeft: -24,
     marginTop: -24,
   },
   corner: {
-    position: 'absolute',
+    position: "absolute",
     width: 30,
     height: 30,
-    borderColor: '#fff',
+    borderColor: "#fff",
     borderWidth: 4,
   },
   smartCorner: {
@@ -696,38 +876,38 @@ const styles = StyleSheet.create({
   cornerBL: { bottom: 0, left: 0, borderRightWidth: 0, borderTopWidth: 0 },
   cornerBR: { bottom: 0, right: 0, borderLeftWidth: 0, borderTopWidth: 0 },
   buttonContainer: {
-    width: '100%',
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    width: "100%",
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
     padding: 24,
     borderRadius: 32,
   },
   actionButton: {
-    alignItems: 'center',
+    alignItems: "center",
     gap: 6,
   },
   actionIcon: {
     height: 48,
     width: 48,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     borderRadius: 24,
-    backgroundColor: 'rgba(255,255,255,0.15)',
+    backgroundColor: "rgba(255,255,255,0.15)",
   },
   actionLabel: {
     fontSize: 12,
-    color: '#fff',
-    fontWeight: '700',
+    color: "#fff",
+    fontWeight: "700",
   },
   captureButton: {
     height: 84,
     width: 84,
     borderRadius: 42,
-    backgroundColor: '#fff',
-    alignItems: 'center',
-    justifyContent: 'center',
+    backgroundColor: "#fff",
+    alignItems: "center",
+    justifyContent: "center",
     elevation: 5,
   },
   captureInner: {
@@ -736,17 +916,17 @@ const styles = StyleSheet.create({
     borderRadius: 34,
     backgroundColor: Palette.primary,
     borderWidth: 4,
-    borderColor: '#eee',
+    borderColor: "#eee",
   },
   analysisCard: {
-    position: 'absolute',
+    position: "absolute",
     bottom: 30,
     left: 16,
     right: 16,
-    backgroundColor: '#fff',
+    backgroundColor: "#fff",
     borderRadius: 32,
     padding: 24,
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 10 },
     shadowOpacity: 0.2,
     shadowRadius: 20,
@@ -754,47 +934,47 @@ const styles = StyleSheet.create({
   },
   analysisHeader: {
     marginBottom: 20,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
   },
   analysisTitle: {
     fontSize: 22,
-    fontWeight: '900',
-    color: '#1a1a1a',
+    fontWeight: "900",
+    color: "#1a1a1a",
   },
   analysisCategory: {
     fontSize: 14,
     color: Palette.primary,
-    fontWeight: '700',
+    fontWeight: "700",
     marginTop: 4,
   },
   confidencePill: {
-    backgroundColor: '#f0fdf4',
+    backgroundColor: "#f0fdf4",
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 12,
   },
   confidenceText: {
     color: Palette.primary,
-    fontWeight: '800',
+    fontWeight: "800",
     fontSize: 12,
   },
   matchesHeaderRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    justifyContent: "space-between",
     marginBottom: 12,
   },
   matchesLabel: {
     fontSize: 12,
-    color: '#999',
-    fontWeight: '800',
-    textTransform: 'uppercase',
+    color: "#999",
+    fontWeight: "800",
+    textTransform: "uppercase",
   },
   matchesCount: {
-    color: '#999',
+    color: "#999",
     fontSize: 12,
-    fontWeight: '700',
+    fontWeight: "700",
   },
   matchesScroll: {
     maxHeight: 200,
@@ -803,80 +983,80 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   matchRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     padding: 14,
     borderRadius: 20,
-    backgroundColor: '#f8fafc',
+    backgroundColor: "#f8fafc",
     borderWidth: 1,
-    borderColor: '#f1f5f9',
+    borderColor: "#f1f5f9",
   },
   storeInfo: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 12,
     flex: 1,
   },
   storeName: {
-    color: '#1a1a1a',
+    color: "#1a1a1a",
     fontSize: 15,
-    fontWeight: '800',
+    fontWeight: "800",
   },
   matchAddress: {
-    color: '#666',
+    color: "#666",
     fontSize: 12,
     marginTop: 2,
   },
   matchDetails: {
-    alignItems: 'flex-end',
+    alignItems: "flex-end",
   },
   priceText: {
     color: Palette.primary,
     fontSize: 18,
-    fontWeight: '900',
+    fontWeight: "900",
   },
   distanceRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 4,
     marginTop: 2,
   },
   distanceText: {
-    color: '#999',
+    color: "#999",
     fontSize: 12,
-    fontWeight: '600',
+    fontWeight: "600",
   },
   newScanButton: {
     marginTop: 20,
     backgroundColor: Palette.primary,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
     paddingVertical: 16,
     borderRadius: 20,
     gap: 10,
   },
   newScanText: {
-    color: '#fff',
-    fontWeight: '800',
+    color: "#fff",
+    fontWeight: "800",
     fontSize: 16,
   },
   processingOverlay: {
     ...StyleSheet.absoluteFillObject,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
   loaderWrapper: {
     marginBottom: 20,
   },
   processingTitle: {
-    color: 'white',
+    color: "white",
     fontSize: 22,
-    fontWeight: '900',
+    fontWeight: "900",
   },
   processingHint: {
-    color: 'rgba(255,255,255,0.7)',
+    color: "rgba(255,255,255,0.7)",
     fontSize: 15,
     marginTop: 8,
   },
@@ -884,32 +1064,32 @@ const styles = StyleSheet.create({
     opacity: 0.5,
   },
   notFoundContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 16,
     padding: 20,
-    backgroundColor: '#fff9db',
+    backgroundColor: "#fff9db",
     borderRadius: 20,
     borderWidth: 1,
-    borderColor: '#ffeaa7',
+    borderColor: "#ffeaa7",
     marginBottom: 20,
   },
   notFoundIconBg: {
     width: 50,
     height: 50,
     borderRadius: 25,
-    backgroundColor: '#fffbe6',
-    alignItems: 'center',
-    justifyContent: 'center',
+    backgroundColor: "#fffbe6",
+    alignItems: "center",
+    justifyContent: "center",
   },
   notFoundTitle: {
-    color: '#d48806',
+    color: "#d48806",
     fontSize: 16,
-    fontWeight: '800',
+    fontWeight: "800",
     marginBottom: 4,
   },
   notFoundText: {
-    color: '#d48806',
+    color: "#d48806",
     fontSize: 14,
     lineHeight: 20,
   },

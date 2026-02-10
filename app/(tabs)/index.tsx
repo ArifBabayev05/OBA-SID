@@ -391,7 +391,7 @@ const styles = StyleSheet.create({
     paddingBottom: 40,
   },
   headerSafe: {
-    paddingTop: Platform.OS === 'ios' ? 0 : 40,
+    paddingTop: Platform.OS === 'ios' ? 0 : 50,
   },
   headerTop: {
     flexDirection: 'row',

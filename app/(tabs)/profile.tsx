@@ -212,7 +212,7 @@ const styles = StyleSheet.create({
     borderBottomRightRadius: 40,
   },
   safeArea: {
-    paddingTop: Platform.OS === 'ios' ? 0 : 40,
+    paddingTop: Platform.OS === 'ios' ? 0 : 50,
   },
   headerTop: {
     flexDirection: 'row',
